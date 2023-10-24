@@ -2,6 +2,7 @@
 #define RISCV_ISA_INSTR_H
 
 #include <stdint.h>
+
 #include <array>
 #include <iostream>
 
@@ -225,6 +226,11 @@ enum Parts {
 	F2_FNMADD_S = 0b00,
 	F2_FNMADD_D = 0b01,
 
+	// P standard extension
+	OP_P = 0b1110111,
+	F7_ADD8 = 0b0100100,
+	F7_ADD16 = 0b0100000,
+
 	// reserved opcodes for custom instructions
 	OP_CUST1 = 0b0101011,
 	OP_CUST0 = 0b0001011,
@@ -405,6 +411,305 @@ enum Mapping {
 	FCVT_WU_D,
 	FCVT_D_W,
 	FCVT_D_WU,
+
+	// P standard extension :: 16-bit Addition & Subtraction Instructions
+	ADD16,
+	RADD16,
+	URADD16,
+	KADD16,
+	UKADD16,
+	SUB16,
+	RSUB16,
+	URSUB16,
+	KSUB16,
+	UKSUB16,
+	CRAS16,
+	RCRAS16,
+	URCRAS16,
+	KCRAS16,
+	UKCRAS16,
+	CRSA16,
+	RCRSA16,
+	URCRSA16,
+	KCRSA16,
+	UKCRSA16,
+	STAS16,
+	RSTAS16,
+	URSTAS16,
+	KSTAS16,
+	UKSTAS16,
+	STSA16,
+	RSTSA16,
+	URSTSA16,
+	KSTSA16,
+	UKSTSA16,
+
+	// P standard extension :: 8-bit Addition & Subtraction Instructions
+	ADD8,
+	RADD8,
+	URADD8,
+	KADD8,
+	UKADD8,
+	SUB8,
+	RSUB8,
+	URSUB8,
+	KSUB8,
+	UKSUB8,
+
+	// P standard extension :: 16-bit Shift Instructions
+	SRA16,
+	SRAI16,
+	SRA16_u,
+	SRAI16_u,
+	SRL16,
+	SRLI16,
+	SRL16_u,
+	SRLI16_u,
+	SLL16,
+	SLLI16,
+	KSLL16,
+	KSLLI16,
+	KSLRA16,
+	KSLRA16_u,
+
+	// P standard extension :: 8-bit Shift Instructions
+	SRA8,
+	SRAI8,
+	SRA8_u,
+	SRAI8_u,
+	SRL8,
+	SRLI8,
+	SRL8_u,
+	SRLI8_u,
+	SLL8,
+	SLLI8,
+	KSLL8,
+	KSLLI8,
+	KSLRA8,
+	KSLRA8_u,
+
+	// P standard extension :: 16-bit Compare Instructions
+	CMPEQ16,
+	SCMPLT16,
+	SCMPLE16,
+	UCMPLT16,
+	UCMPLE16,
+
+	// P standard extension :: 8-bit Compare Instructions
+	CMPEQ8,
+	SCMPLT8,
+	SCMPLE8,
+	UCMPLT8,
+	UCMPLE8,
+
+	// P standard extension :: 16-bit Multiply Instructions
+	SMUL16,
+	SMULX16,
+	UMUL16,
+	UMULX16,
+	KHM16,
+	KHMX16,
+
+	// P standard extension :: 8-bit Multiply Instructions
+	SMUL8,
+	SMULX8,
+	UMUL8,
+	UMULX8,
+	KHM8,
+	KHMX8,
+
+	// P standard extension :: 16-bit Misc Instructions
+	SMIN16,
+	UMIN16,
+	SMAX16,
+	UMAX16,
+	SCLIP16,
+	UCLIP16,
+	KABS16,
+	CLRS16,
+	CLZ16,
+	SWAP16,
+
+	// P standard extension :: 8-bit Misc Instructions
+	SMIN8,
+	UMIN8,
+	SMAX8,
+	UMAX8,
+	KABS8,
+	SCLIP8,
+	UCLIP8,
+	CLRS8,
+	CLZ8,
+	SWAP8,
+
+	// P standard extension :: 8-bit Unpacking Instructions
+	SUNPKD810,
+	SUNPKD820,
+	SUNPKD830,
+	SUNPKD831,
+	SUNPKD832,
+	ZUNPKD810,
+	ZUNPKD820,
+	ZUNPKD830,
+	ZUNPKD831,
+	ZUNPKD832,
+
+	// P standard extension :: 16-bit Packing Instructions
+	PKBB16,
+	PKBT16,
+	PKTB16,
+	PKTT16,
+
+	// P standard extension :: Most Significant Word “32x32” Multiply & Add Instructions
+	SMMUL,
+	SMMUL_u,
+	KMMAC,
+	KMMAC_u,
+	KMMSB,
+	KMMSB_u,
+	KWMMUL,
+	KWMMUL_u,
+
+	// P standard extension :: Most Significant Word “32x16” Multiply & Add Instructions
+	SMMWB,
+	SMMWB_u,
+	SMMWT,
+	SMMWT_u,
+	KMMAWB,
+	KMMAWB_u,
+	KMMAWT,
+	KMMAWT_u,
+	KMMWB2,
+	KMMWB2_u,
+	KMMWT2,
+	KMMWT2_u,
+	KMMAWB2,
+	KMMAWB2_u,
+	KMMAWT2,
+	KMMAWT2_u,
+
+	// P standard extension :: Signed 16-bit Multiply with 32-bit Add/Subtract Instructions
+	SMBB16,
+	SMBT16,
+	SMTT16,
+	KMDA,
+	KMXDA,
+	SMDS,
+	SMDRS,
+	SMXDS,
+	KMABB,
+	KMABT,
+	KMATT,
+	KMADA,
+	KMAXDA,
+	KMADS,
+	KMADRS,
+	KMAXDS,
+	KMSDA,
+	KMSXDA,
+
+	// P standard extension :: Signed 16-bit Multiply with 64-bit Add/Subtract Instructions
+	SMAL,
+
+	// P standard extension :: Miscellaneous Instructions
+	SCLIP32,
+	UCLIP32,
+	CLRS32,
+	CLZ32,
+	PBSAD,
+	PBSADA,
+
+	// P standard extension :: 8-bit Multiply with 32-bit Add Instructions
+	SMAQA,
+	UMAQA,
+	SMAQA_SU,
+
+	// P standard extension :: 64-bit Addition & Subtraction Instructions
+	ADD64,
+	RADD64,
+	URADD64,
+	KADD64,
+	UKADD64,
+	SUB64,
+	RSUB64,
+	URSUB64,
+	KSUB64,
+	UKSUB64,
+
+	// P standard extension :: 32-bit Multiply with 64-bit Add/Subtract Instructions
+	SMAR64,
+	SMSR64,
+	UMAR64,
+	UMSR64,
+	KMAR64,
+	KMSR64,
+	UKMAR64,
+	UKMSR64,
+
+	// P standard extension :: Signed 16-bit Multiply with 64-bit Add/Subtract Instructions
+	SMALBB,
+	SMALBT,
+	SMALTT,
+	SMALDA,
+	SMALXDA,
+	SMALDS,
+	SMALDRS,
+	SMALXDS,
+	SMSLDA,
+	SMSLXDA,
+
+	// P standard extension :: Q15 saturation instructions
+	KADDH,
+	KSUBH,
+	KHMBB,
+	KHMBT,
+	KHMTT,
+	UKADDH,
+	UKSUBH,
+
+	// P standard extension :: Q31 saturation Instructions
+	KADDW,
+	UKADDW,
+	KSUBW,
+	UKSUBW,
+	KDMBB,
+	KDMBT,
+	KDMTT,
+	KSLRAW,
+	KSLRAW_u,
+	KSLLW,
+	KSLLIW,
+	KDMABB,
+	KDMABT,
+	KDMATT,
+	KABSW,
+
+	// P standard extension :: 32-bit Computation Instructions
+	RADDW,
+	URADDW,
+	RSUBW,
+	URSUBW,
+	MULR64,
+	MULSR64,
+
+	// P standard extension :: Overflow/Saturation status manipulation instructions
+	RDOV,
+	CLROV,
+
+	// P standard extension :: Non-SIMD Miscellaneous Instructions
+	AVE,
+	SRA_u,
+	SRAI_u,
+	BITREV,
+	BITREVI,
+	WEXT,
+	WEXTI,
+	CMIX,
+	INSB,
+	MADDR32,
+	MSUBR32,
+	MAX,
+	MIN,
 
 	// RV64D standard extension (addition to RV32D)
 	FCVT_L_D,

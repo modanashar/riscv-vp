@@ -1,9 +1,10 @@
 #include "instr.h"
-#include "trap.h"
-#include "util/common.h"
 
 #include <cassert>
 #include <stdexcept>
+
+#include "trap.h"
+#include "util/common.h"
 
 constexpr uint32_t LUI_MASK = 0b00000000000000000000000001111111;
 constexpr uint32_t LUI_ENCODING = 0b00000000000000000000000000110111;
@@ -407,12 +408,9 @@ enum Opcode {
 };
 }
 
-std::array<const char*, 32> Opcode::regnamePrettyStr = {
-	"zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
-	"s0/fp", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
-	"a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
-	"s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
-};
+std::array<const char *, 32> Opcode::regnamePrettyStr = {
+    "zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0/fp", "s1", "a0",  "a1",  "a2", "a3", "a4", "a5",
+    "a6",   "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8",    "s9", "s10", "s11", "t3", "t4", "t5", "t6"};
 
 /*
 Python snippet to generate the "mappingStr":
@@ -598,6 +596,305 @@ std::array<const char *, Opcode::NUMBER_OF_INSTRUCTIONS> Opcode::mappingStr = {
     "FCVT_D_W",
     "FCVT_D_WU",
 
+    // P standard extension :: 16-bit Addition & Subtraction Instructions
+    "ADD16",
+    "RADD16",
+    "URADD16",
+    "KADD16",
+    "UKADD16",
+    "SUB16",
+    "RSUB16",
+    "URSUB16",
+    "KSUB16",
+    "UKSUB16",
+    "CRAS16",
+    "RCRAS16",
+    "URCRAS16",
+    "KCRAS16",
+    "UKCRAS16",
+    "CRSA16",
+    "RCRSA16",
+    "URCRSA16",
+    "KCRSA16",
+    "UKCRSA16",
+    "STAS16",
+    "RSTAS16",
+    "URSTAS16",
+    "KSTAS16",
+    "UKSTAS16",
+    "STSA16",
+    "RSTSA16",
+    "URSTSA16",
+    "KSTSA16",
+    "UKSTSA16",
+
+    // P standard extension :: 8-bit Addition & Subtraction Instructions
+    "ADD8",
+    "RADD8",
+    "URADD8",
+    "KADD8",
+    "UKADD8",
+    "SUB8",
+    "RSUB8",
+    "URSUB8",
+    "KSUB8",
+    "UKSUB8",
+
+    // P standard extension :: 16-bit Shift Instructions
+    "SRA16",
+    "SRAI16",
+    "SRA16_u",
+    "SRAI16_u",
+    "SRL16",
+    "SRLI16",
+    "SRL16_u",
+    "SRLI16_u",
+    "SLL16",
+    "SLLI16",
+    "KSLL16",
+    "KSLLI16",
+    "KSLRA16",
+    "KSLRA16_u",
+
+    // P standard extension :: 8-bit Shift Instructions
+    "SRA8",
+    "SRAI8",
+    "SRA8_u",
+    "SRAI8_u",
+    "SRL8",
+    "SRLI8",
+    "SRL8_u",
+    "SRLI8_u",
+    "SLL8",
+    "SLLI8",
+    "KSLL8",
+    "KSLLI8",
+    "KSLRA8",
+    "KSLRA8_u",
+
+    // P standard extension :: 16-bit Compare Instructions
+    "CMPEQ16",
+    "SCMPLT16",
+    "SCMPLE16",
+    "UCMPLT16",
+    "UCMPLE16",
+
+    // P standard extension :: 8-bit Compare Instructions
+    "CMPEQ8",
+    "SCMPLT8",
+    "SCMPLE8",
+    "UCMPLT8",
+    "UCMPLE8",
+
+    // P standard extension :: 16-bit Multiply Instructions
+    "SMUL16",
+    "SMULX16",
+    "UMUL16",
+    "UMULX16",
+    "KHM16",
+    "KHMX16",
+
+    // P standard extension :: 8-bit Multiply Instructions
+    "SMUL8",
+    "SMULX8",
+    "UMUL8",
+    "UMULX8",
+    "KHM8",
+    "KHMX8",
+
+    // P standard extension :: 16-bit Misc Instructions
+    "SMIN16",
+    "UMIN16",
+    "SMAX16",
+    "UMAX16",
+    "SCLIP16",
+    "UCLIP16",
+    "KABS16",
+    "CLRS16",
+    "CLZ16",
+    "SWAP16",
+
+    // P standard extension :: 8-bit Misc Instructions
+    "SMIN8",
+    "UMIN8",
+    "SMAX8",
+    "UMAX8",
+    "KABS8",
+    "SCLIP8",
+    "UCLIP8",
+    "CLRS8",
+    "CLZ8",
+    "SWAP8",
+
+    // P standard extension :: 8-bit Unpacking Instructions
+    "SUNPKD810",
+    "SUNPKD820",
+    "SUNPKD830",
+    "SUNPKD831",
+    "SUNPKD832",
+    "ZUNPKD810",
+    "ZUNPKD820",
+    "ZUNPKD830",
+    "ZUNPKD831",
+    "ZUNPKD832",
+
+    // P standard extension :: 16-bit Packing Instructions
+    "PKBB16",
+    "PKBT16",
+    "PKTB16",
+    "PKTT16",
+
+    // P standard extension :: Most Significant Word “32x32” Multiply & Add Instructions
+    "SMMUL",
+    "SMMUL_u",
+    "KMMAC",
+    "KMMAC_u",
+    "KMMSB",
+    "KMMSB_u",
+    "KWMMUL",
+    "KWMMUL_u",
+
+    // P standard extension :: Most Significant Word “32x16” Multiply & Add Instructions
+    "SMMWB",
+    "SMMWB_u",
+    "SMMWT",
+    "SMMWT_u",
+    "KMMAWB",
+    "KMMAWB_u",
+    "KMMAWT",
+    "KMMAWT_u",
+    "KMMWB2",
+    "KMMWB2_u",
+    "KMMWT2",
+    "KMMWT2_u",
+    "KMMAWB2",
+    "KMMAWB2_u",
+    "KMMAWT2",
+    "KMMAWT2_u",
+
+    // P standard extension :: Signed 16-bit Multiply with 32-bit Add/Subtract Instructions
+    "SMBB16",
+    "SMBT16",
+    "SMTT16",
+    "KMDA",
+    "KMXDA",
+    "SMDS",
+    "SMDRS",
+    "SMXDS",
+    "KMABB",
+    "KMABT",
+    "KMATT",
+    "KMADA",
+    "KMAXDA",
+    "KMADS",
+    "KMADRS",
+    "KMAXDS",
+    "KMSDA",
+    "KMSXDA",
+
+    // P standard extension :: Signed 16-bit Multiply with 64-bit Add/Subtract Instructions
+    "SMAL",
+
+    // P standard extension :: Miscellaneous Instructions
+    "SCLIP32",
+    "UCLIP32",
+    "CLRS32",
+    "CLZ32",
+    "PBSAD",
+    "PBSADA",
+
+    // P standard extension :: 8-bit Multiply with 32-bit Add Instructions
+    "SMAQA",
+    "UMAQA",
+    "SMAQA_SU",
+
+    // P standard extension :: 64-bit Addition & Subtraction Instructions
+    "ADD64",
+    "RADD64",
+    "URADD64",
+    "KADD64",
+    "UKADD64",
+    "SUB64",
+    "RSUB64",
+    "URSUB64",
+    "KSUB64",
+    "UKSUB64",
+
+    // P standard extension :: 32-bit Multiply with 64-bit Add/Subtract Instructions
+    "SMAR64",
+    "SMSR64",
+    "UMAR64",
+    "UMSR64",
+    "KMAR64",
+    "KMSR64",
+    "UKMAR64",
+    "UKMSR64",
+
+    // P standard extension :: Signed 16-bit Multiply with 64-bit Add/Subtract Instructions
+    "SMALBB",
+    "SMALBT",
+    "SMALTT",
+    "SMALDA",
+    "SMALXDA",
+    "SMALDS",
+    "SMALDRS",
+    "SMALXDS",
+    "SMSLDA",
+    "SMSLXDA",
+
+    // P standard extension :: Q15 saturation instructions
+    "KADDH",
+    "KSUBH",
+    "KHMBB",
+    "KHMBT",
+    "KHMTT",
+    "UKADDH",
+    "UKSUBH",
+
+    // P standard extension :: Q31 saturation Instructions
+    "KADDW",
+    "UKADDW",
+    "KSUBW",
+    "UKSUBW",
+    "KDMBB",
+    "KDMBT",
+    "KDMTT",
+    "KSLRAW",
+    "KSLRAW_u",
+    "KSLLW",
+    "KSLLIW",
+    "KDMABB",
+    "KDMABT",
+    "KDMATT",
+    "KABSW",
+
+    // P standard extension :: 32-bit Computation Instructions
+    "RADDW",
+    "URADDW",
+    "RSUBW",
+    "URSUBW",
+    "MULR64",
+    "MULSR64",
+
+    // P standard extension :: Overflow/Saturation status manipulation instructions
+    "RDOV",
+    "CLROV",
+
+    // P standard extension :: Non-SIMD Miscellaneous Instructions
+    "AVE",
+    "SRA_u",
+    "SRAI_u",
+    "BITREV",
+    "BITREVI",
+    "WEXT",
+    "WEXTI",
+    "CMIX",
+    "INSB",
+    "MADDR32",
+    "MSUBR32",
+    "MAX",
+    "MIN",
+
     // RV64D standard extension (addition to RV32D)
     "FCVT_L_D",
     "FCVT_LU_D",
@@ -719,6 +1016,305 @@ Opcode::Type Opcode::getType(Opcode::Mapping mapping) {
 		case FCVT_D_L:
 		case FCVT_D_LU:
 		case FMV_D_X:
+
+		// P standard extension :: 16-bit Addition & Subtraction Instructions
+		case ADD16:
+		case RADD16:
+		case URADD16:
+		case KADD16:
+		case UKADD16:
+		case SUB16:
+		case RSUB16:
+		case URSUB16:
+		case KSUB16:
+		case UKSUB16:
+		case CRAS16:
+		case RCRAS16:
+		case URCRAS16:
+		case KCRAS16:
+		case UKCRAS16:
+		case CRSA16:
+		case RCRSA16:
+		case URCRSA16:
+		case KCRSA16:
+		case UKCRSA16:
+		case STAS16:
+		case RSTAS16:
+		case URSTAS16:
+		case KSTAS16:
+		case UKSTAS16:
+		case STSA16:
+		case RSTSA16:
+		case URSTSA16:
+		case KSTSA16:
+		case UKSTSA16:
+
+		// P standard extension :: 8-bit Addition & Subtraction Instructions
+		case ADD8:
+		case RADD8:
+		case URADD8:
+		case KADD8:
+		case UKADD8:
+		case SUB8:
+		case RSUB8:
+		case URSUB8:
+		case KSUB8:
+		case UKSUB8:
+
+		// P standard extension :: 16-bit Shift Instructions
+		case SRA16:
+		case SRAI16:
+		case SRA16_u:
+		case SRAI16_u:
+		case SRL16:
+		case SRLI16:
+		case SRL16_u:
+		case SRLI16_u:
+		case SLL16:
+		case SLLI16:
+		case KSLL16:
+		case KSLLI16:
+		case KSLRA16:
+		case KSLRA16_u:
+
+		// P standard extension :: 8-bit Shift Instructions
+		case SRA8:
+		case SRAI8:
+		case SRA8_u:
+		case SRAI8_u:
+		case SRL8:
+		case SRLI8:
+		case SRL8_u:
+		case SRLI8_u:
+		case SLL8:
+		case SLLI8:
+		case KSLL8:
+		case KSLLI8:
+		case KSLRA8:
+		case KSLRA8_u:
+
+		// P standard extension :: 16-bit Compare Instructions
+		case CMPEQ16:
+		case SCMPLT16:
+		case SCMPLE16:
+		case UCMPLT16:
+		case UCMPLE16:
+
+		// P standard extension :: 8-bit Compare Instructions
+		case CMPEQ8:
+		case SCMPLT8:
+		case SCMPLE8:
+		case UCMPLT8:
+		case UCMPLE8:
+
+		// P standard extension :: 16-bit Multiply Instructions
+		case SMUL16:
+		case SMULX16:
+		case UMUL16:
+		case UMULX16:
+		case KHM16:
+		case KHMX16:
+
+		// P standard extension :: 8-bit Multiply Instructions
+		case SMUL8:
+		case SMULX8:
+		case UMUL8:
+		case UMULX8:
+		case KHM8:
+		case KHMX8:
+
+		// P standard extension :: 16-bit Misc Instructions
+		case SMIN16:
+		case UMIN16:
+		case SMAX16:
+		case UMAX16:
+		case SCLIP16:
+		case UCLIP16:
+		case KABS16:
+		case CLRS16:
+		case CLZ16:
+		case SWAP16:
+
+		// P standard extension :: 8-bit Misc Instructions
+		case SMIN8:
+		case UMIN8:
+		case SMAX8:
+		case UMAX8:
+		case KABS8:
+		case SCLIP8:
+		case UCLIP8:
+		case CLRS8:
+		case CLZ8:
+		case SWAP8:
+
+		// P standard extension :: 8-bit Unpacking Instructions
+		case SUNPKD810:
+		case SUNPKD820:
+		case SUNPKD830:
+		case SUNPKD831:
+		case SUNPKD832:
+		case ZUNPKD810:
+		case ZUNPKD820:
+		case ZUNPKD830:
+		case ZUNPKD831:
+		case ZUNPKD832:
+
+		// P standard extension :: 16-bit Packing Instructions
+		case PKBB16:
+		case PKBT16:
+		case PKTB16:
+		case PKTT16:
+
+		// P standard extension :: Most Significant Word “32x32” Multiply & Add Instructions
+		case SMMUL:
+		case SMMUL_u:
+		case KMMAC:
+		case KMMAC_u:
+		case KMMSB:
+		case KMMSB_u:
+		case KWMMUL:
+		case KWMMUL_u:
+
+		// P standard extension :: Most Significant Word “32x16” Multiply & Add Instructions
+		case SMMWB:
+		case SMMWB_u:
+		case SMMWT:
+		case SMMWT_u:
+		case KMMAWB:
+		case KMMAWB_u:
+		case KMMAWT:
+		case KMMAWT_u:
+		case KMMWB2:
+		case KMMWB2_u:
+		case KMMWT2:
+		case KMMWT2_u:
+		case KMMAWB2:
+		case KMMAWB2_u:
+		case KMMAWT2:
+		case KMMAWT2_u:
+
+		// P standard extension :: Signed 16-bit Multiply with 32-bit Add/Subtract Instructions
+		case SMBB16:
+		case SMBT16:
+		case SMTT16:
+		case KMDA:
+		case KMXDA:
+		case SMDS:
+		case SMDRS:
+		case SMXDS:
+		case KMABB:
+		case KMABT:
+		case KMATT:
+		case KMADA:
+		case KMAXDA:
+		case KMADS:
+		case KMADRS:
+		case KMAXDS:
+		case KMSDA:
+		case KMSXDA:
+
+		// P standard extension :: Signed 16-bit Multiply with 64-bit Add/Subtract Instructions
+		case SMAL:
+
+		// P standard extension :: Miscellaneous Instructions
+		case SCLIP32:
+		case UCLIP32:
+		case CLRS32:
+		case CLZ32:
+		case PBSAD:
+		case PBSADA:
+
+		// P standard extension :: 8-bit Multiply with 32-bit Add Instructions
+		case SMAQA:
+		case UMAQA:
+		case SMAQA_SU:
+
+		// P standard extension :: 64-bit Addition & Subtraction Instructions
+		case ADD64:
+		case RADD64:
+		case URADD64:
+		case KADD64:
+		case UKADD64:
+		case SUB64:
+		case RSUB64:
+		case URSUB64:
+		case KSUB64:
+		case UKSUB64:
+
+		// P standard extension :: 32-bit Multiply with 64-bit Add/Subtract Instructions
+		case SMAR64:
+		case SMSR64:
+		case UMAR64:
+		case UMSR64:
+		case KMAR64:
+		case KMSR64:
+		case UKMAR64:
+		case UKMSR64:
+
+		// P standard extension :: Signed 16-bit Multiply with 64-bit Add/Subtract Instructions
+		case SMALBB:
+		case SMALBT:
+		case SMALTT:
+		case SMALDA:
+		case SMALXDA:
+		case SMALDS:
+		case SMALDRS:
+		case SMALXDS:
+		case SMSLDA:
+		case SMSLXDA:
+
+		// P standard extension :: Q15 saturation instructions
+		case KADDH:
+		case KSUBH:
+		case KHMBB:
+		case KHMBT:
+		case KHMTT:
+		case UKADDH:
+		case UKSUBH:
+
+		// P standard extension :: Q31 saturation Instructions
+		case KADDW:
+		case UKADDW:
+		case KSUBW:
+		case UKSUBW:
+		case KDMBB:
+		case KDMBT:
+		case KDMTT:
+		case KSLRAW:
+		case KSLRAW_u:
+		case KSLLW:
+		case KSLLIW:
+		case KDMABB:
+		case KDMABT:
+		case KDMATT:
+		case KABSW:
+
+		// P standard extension :: 32-bit Computation Instructions
+		case RADDW:
+		case URADDW:
+		case RSUBW:
+		case URSUBW:
+		case MULR64:
+		case MULSR64:
+		case MSUBR32:
+
+		// P standard extension :: Overflow/Saturation status manipulation instructions
+		case RDOV:
+		case CLROV:
+
+		// P standard extension :: Non-SIMD Miscellaneous Instructions
+		case AVE:
+		case SRA_u:
+		case SRAI_u:
+		case BITREV:
+		case BITREVI:
+		case WEXT:
+		case WEXTI:
+		case CMIX:
+		case INSB:
+		case MADDR32:
+		case MAX:
+		case MIN:
 			return Type::R;
 		case JALR:
 		case LB:
@@ -740,6 +1336,7 @@ Opcode::Type Opcode::getType(Opcode::Mapping mapping) {
 		case SRAIW:
 		case FLW:
 		case FLD:
+
 			return Type::I;
 		case SB:
 		case SH:
@@ -1142,7 +1739,7 @@ Opcode::Mapping expand_compressed(Instruction &instr, Compressed::Opcode op, Arc
 			return UNDEF;
 
 		case C_Reserved:
-		    return UNDEF;   // reserved instructions should raise an illegal instruction exception
+			return UNDEF;  // reserved instructions should raise an illegal instruction exception
 
 		case C_NOP:
 			instr = InstructionFactory::ADD(0, 0, 0);
@@ -1229,8 +1826,8 @@ Opcode::Mapping expand_compressed(Instruction &instr, Compressed::Opcode op, Arc
 			return JAL;
 
 		case C_ADDIW:
-            if (instr.c_rd() == 0)
-                return UNDEF;	// reserved
+			if (instr.c_rd() == 0)
+				return UNDEF;  // reserved
 			instr = InstructionFactory::ADDI(instr.c_rd(), instr.c_rd(), instr.c_imm());
 			return ADDIW;
 
@@ -1240,16 +1837,16 @@ Opcode::Mapping expand_compressed(Instruction &instr, Compressed::Opcode op, Arc
 
 		case C_ADDI16SP: {
 			auto n = C_ADDI16SP_NZIMM(instr.data());
-            if (n == 0)
-                return UNDEF;	// reserved
+			if (n == 0)
+				return UNDEF;  // reserved
 			instr = InstructionFactory::ADDI(2, 2, n);
 			return ADDI;
 		}
 
 		case C_LUI: {
 			auto n = C_LUI_NZIMM(instr.data());
-            if (n == 0)
-                return UNDEF;	// reserved
+			if (n == 0)
+				return UNDEF;  // reserved
 			instr = InstructionFactory::LUI(instr.c_rd(), n);
 			return LUI;
 		}
@@ -1295,14 +1892,14 @@ Opcode::Mapping expand_compressed(Instruction &instr, Compressed::Opcode op, Arc
 			return BNE;
 
 		case C_LWSP:
-            if (instr.c_rd() == 0)
-                return UNDEF;	// reserved
+			if (instr.c_rd() == 0)
+				return UNDEF;  // reserved
 			instr = InstructionFactory::LW(instr.c_rd(), 2, C_LWSP_UIMM(instr.data()));
 			return LW;
 
 		case C_LDSP:
-            if (instr.c_rd() == 0)
-                return UNDEF;	// reserved
+			if (instr.c_rd() == 0)
+				return UNDEF;  // reserved
 			instr = InstructionFactory::LD(instr.c_rd(), 2, C_LDSP_UIMM(instr.data()));
 			return LD;
 
@@ -1335,8 +1932,8 @@ Opcode::Mapping expand_compressed(Instruction &instr, Compressed::Opcode op, Arc
 			return EBREAK;
 
 		case C_JR:
-            if (instr.c_rd() == 0)
-                return UNDEF;	// reserved
+			if (instr.c_rd() == 0)
+				return UNDEF;  // reserved
 			instr = InstructionFactory::JALR(0, instr.c_rd(), 0);
 			return JALR;
 
@@ -1899,6 +2496,17 @@ Opcode::Mapping Instruction::decode_normal(Architecture arch) {
 					MATCH_AND_RETURN_INSTR(FNMADD_D);
 			}
 			break;
+		case OP_P:
+			switch (instr.funct3()) {
+				case 0:
+					switch (instr.funct7()) {
+						case F7_ADD8:
+							return ADD8;
+						case F7_ADD16:
+							return ADD16;
+					}
+					break;
+			}
 	}
 
 	return UNDEF;
