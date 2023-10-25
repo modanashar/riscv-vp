@@ -47,15 +47,73 @@ RegFile::RegFile(const RegFile &other) {
 
 void RegFile::write(uint32_t index, int32_t value) {
 	assert(index <= x31);
-	assert(index != x0);
 	regs[index] = value;
 }
+void RegFile::write8x4(uint32_t index, std::array<int32_t, 4> value) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+	regs[index] = value[3] << 24 | value[2] << 16 | value[1] << 8 | value[0] << 0;
+}
+void RegFile::write16x2(uint32_t index, std::array<int32_t, 2> value) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+	regs[index] = value[1] << 16 | value[0] << 0;
+}
+void RegFile::write32x2(uint32_t index, std::array<int32_t, 2> value) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+
+	regs[index & ~1] = value[0];
+	regs[index | 1] = value[1];
+}
+
+void RegFile::write64x1(uint32_t index, int64_t value) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+	return write32x2(index, {
+	                            (int32_t)(value & 0xFFFF'FFFF),
+	                            (int32_t)((value >> 32) & 0xFFFF'FFFF),
+	                        });
+};
 
 int32_t RegFile::read(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
 	return regs[index];
 }
+std::array<int32_t, 4> RegFile::read8x4(uint32_t index) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+
+	return {
+	    (regs[index] >> 0) & 0xFF,
+	    (regs[index] >> 8) & 0xFF,
+	    (regs[index] >> 16) & 0xFF,
+	    (regs[index] >> 24) & 0xFF,
+	};
+}
+std::array<int32_t, 2> RegFile::read16x2(uint32_t index) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+	return {
+	    (regs[index] >> 0) & 0xFFFF,
+	    (regs[index] >> 16) & 0xFFFF,
+	};
+};
+std::array<int32_t, 2> RegFile::read32x2(uint32_t index) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+	return {
+	    regs[index & ~1],
+	    regs[index | 1],
+	};
+};
+
+int64_t RegFile::read64x1(uint32_t index) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+	return read32x2(index)[0] | (int64_t)read32x2(index)[1] << 32;
+};
 
 uint32_t RegFile::shamt(uint32_t index) {
 	assert(index <= x31);
@@ -1118,43 +1176,29 @@ void ISS::exec_step() {
 			break;
 
 		case Opcode::ADD8: {
-			const auto rs1 = regs[instr.rs1()];
-
-			const auto rs1_0 = (rs1 >> 0) & 0xFF;
-			const auto rs1_1 = (rs1 >> 8) & 0xFF;
-			const auto rs1_2 = (rs1 >> 16) & 0xFF;
-			const auto rs1_3 = (rs1 >> 24) & 0xFF;
-
-			const auto rs2 = regs[instr.rs2()];
-
-			const auto rs2_0 = (rs2 >> 0) & 0xFF;
-			const auto rs2_1 = (rs2 >> 8) & 0xFF;
-			const auto rs2_2 = (rs2 >> 16) & 0xFF;
-			const auto rs2_3 = (rs2 >> 24) & 0xFF;
-
-			const auto rd_0 = (rs1_0 + rs2_0) & 0xFF;
-			const auto rd_1 = (rs1_1 + rs2_1) & 0xFF;
-			const auto rd_2 = (rs1_2 + rs2_2) & 0xFF;
-			const auto rd_3 = (rs1_3 + rs2_3) & 0xFF;
-
-			regs[instr.rd()] = rd_3 << 24 | rd_2 << 16 | rd_1 << 8 | rd_0 << 0;
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			regs.write8x4(instr.rd(), {
+			                              rs1[0] + rs2[0],
+			                              rs1[1] + rs2[1],
+			                              rs1[2] + rs2[2],
+			                              rs1[3] + rs2[3],
+			                          });
 		} break;
 
 		case Opcode::ADD16: {
-			const auto rs1 = regs[instr.rs1()];
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			regs.write16x2(instr.rd(), {
+			                               rs1[0] + rs2[0],
+			                               rs1[1] + rs2[1],
+			                           });
+		} break;
 
-			const auto rs1_0 = (rs1 >> 0) & 0xFFFF;
-			const auto rs1_1 = (rs1 >> 16) & 0xFFFF;
-
-			const auto rs2 = regs[instr.rs2()];
-
-			const auto rs2_0 = (rs2 >> 0) & 0xFFFF;
-			const auto rs2_1 = (rs2 >> 16) & 0xFFFF;
-
-			const auto rd_0 = (rs1_0 + rs2_0) & 0xFFFF;
-			const auto rd_1 = (rs1_1 + rs2_1) & 0xFFFF;
-
-			regs[instr.rd()] = rd_1 << 16 | rd_0 << 0;
+		case Opcode::ADD64: {
+			const auto rs1 = regs.read64x1(instr.rs1());
+			const auto rs2 = regs.read64x1(instr.rs2());
+			regs.write64x1(instr.rd(), rs1 + rs2);
 		} break;
 
 			// instructions accepted by decoder but not by this RV32IMACFP ISS -> do normal trap

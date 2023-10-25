@@ -2496,6 +2496,8 @@ Opcode::Mapping Instruction::decode_normal(Architecture arch) {
 					MATCH_AND_RETURN_INSTR(FNMADD_D);
 			}
 			break;
+
+		// RV32/64 P-Extension
 		case OP_P:
 			switch (instr.funct3()) {
 				case 0:
