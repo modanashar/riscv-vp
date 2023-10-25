@@ -37,6 +37,36 @@ int regcolors[] = {
 #endif
 };
 
+template <typename T, int64_t lo = std::numeric_limits<T>::min(), int64_t hi = std::numeric_limits<T>::max()>
+static T sat_add(bool *out_ov, int64_t a, int64_t b) {
+	if (a > 0 && b > 0 && hi - a < b) {
+		*out_ov = true;
+		return hi;
+	}
+	if (a < 0 && b < 0 && lo - a > b) {
+		*out_ov = true;
+		return lo;
+	}
+
+	*out_ov = false;
+	return static_cast<T>(a + b);
+}
+
+template <typename T, int64_t lo = std::numeric_limits<T>::min(), int64_t hi = std::numeric_limits<T>::max()>
+static T sat_sub(bool *out_ov, int64_t a, int64_t b) {
+	if ((b > 0 && a < lo + b) || (b < 0 && a > hi + b)) {
+		*out_ov = true;
+		return lo;
+	}
+	if ((b > 0 && a > hi - b) || (b < 0 && a < lo - b)) {
+		*out_ov = true;
+		return hi;
+	}
+
+	*out_ov = false;
+	return static_cast<T>(a - b);
+}
+
 RegFile::RegFile() {
 	memset(regs, 0, sizeof(regs));
 }
@@ -52,12 +82,12 @@ void RegFile::write(uint32_t index, int32_t value) {
 void RegFile::write8x4(uint32_t index, std::array<int32_t, 4> value) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
-	regs[index] = value[3] << 24 | value[2] << 16 | value[1] << 8 | value[0] << 0;
+	regs[index] = (value[3] & 0xFF) << 24 | (value[2] & 0xFF) << 16 | (value[1] & 0xFF) << 8 | (value[0] & 0xFF) << 0;
 }
 void RegFile::write16x2(uint32_t index, std::array<int32_t, 2> value) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
-	regs[index] = value[1] << 16 | value[0] << 0;
+	regs[index] = (value[1] & 0xFFFF) << 16 | (value[0] & 0xFFFF) << 0;
 }
 void RegFile::write32x2(uint32_t index, std::array<int32_t, 2> value) {
 	if (index > x31)
@@ -85,20 +115,23 @@ std::array<int32_t, 4> RegFile::read8x4(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
 
-	return {
-	    (regs[index] >> 0) & 0xFF,
-	    (regs[index] >> 8) & 0xFF,
-	    (regs[index] >> 16) & 0xFF,
-	    (regs[index] >> 24) & 0xFF,
+	const auto f = std::array<int8_t, 4>{
+	    (int8_t)((regs[index] >> 0) & 0xFF),
+	    (int8_t)((regs[index] >> 8) & 0xFF),
+	    (int8_t)((regs[index] >> 16) & 0xFF),
+	    (int8_t)((regs[index] >> 24) & 0xFF),
 	};
+	return {f[0], f[1], f[2], f[3]};
 }
 std::array<int32_t, 2> RegFile::read16x2(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
-	return {
-	    (regs[index] >> 0) & 0xFFFF,
-	    (regs[index] >> 16) & 0xFFFF,
+
+	const auto f = std::array<int16_t, 2>{
+	    (int16_t)((regs[index] >> 0) & 0xFFFF),
+	    (int16_t)((regs[index] >> 16) & 0xFFFF),
 	};
+	return {f[0], f[1]};
 };
 std::array<int32_t, 2> RegFile::read32x2(uint32_t index) {
 	if (index > x31)
@@ -1175,6 +1208,8 @@ void ISS::exec_step() {
 			return_from_trap_handler(MachineMode);
 			break;
 
+		// *** P Extension ***
+		// SIMD Add 8-bit
 		case Opcode::ADD8: {
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
@@ -1186,6 +1221,7 @@ void ISS::exec_step() {
 			                          });
 		} break;
 
+		// SIMD Add 16-bit
 		case Opcode::ADD16: {
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
@@ -1195,10 +1231,318 @@ void ISS::exec_step() {
 			                           });
 		} break;
 
+		// SIMD Add 64-bit
 		case Opcode::ADD64: {
 			const auto rs1 = regs.read64x1(instr.rs1());
 			const auto rs2 = regs.read64x1(instr.rs2());
 			regs.write64x1(instr.rd(), rs1 + rs2);
+		} break;
+
+		// Average with rounding
+		case Opcode::AVE: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			regs.write(instr.rd(), (int32_t)(((int64_t)rs1 + rs2 + 1) >> 1));
+		} break;
+
+		// Bit Reverse
+		case Opcode::BITREV: {
+			const auto rs1 = (uint32_t)regs.read(instr.rs1());
+			const auto rs2 = (uint32_t)regs.read(instr.rs2());
+			auto n = rs1;
+			n = (n & 0xffff0000) >> 16 | (n & 0x0000ffff) << 16;
+			n = (n & 0xff00ff00) >> 8 | (n & 0x00ff00ff) << 8;
+			n = (n & 0xf0f0f0f0) >> 4 | (n & 0x0f0f0f0f) << 4;
+			n = (n & 0xcccccccc) >> 2 | (n & 0x33333333) << 2;
+			n = (n & 0xaaaaaaaa) >> 1 | (n & 0x55555555) << 1;
+			n = n >> (32 - rs2);
+			regs.write(instr.rd(), (int32_t)n);
+		} break;
+
+		// Bit Reverse Immediate
+		case Opcode::BITREVI: {
+			const auto rs1 = (uint32_t)regs.read(instr.rs1());
+			const auto rs2 = (uint32_t)instr.rs2();
+			auto n = rs1;
+			n = (n & 0xffff0000) >> 16 | (n & 0x0000ffff) << 16;
+			n = (n & 0xff00ff00) >> 8 | (n & 0x00ff00ff) << 8;
+			n = (n & 0xf0f0f0f0) >> 4 | (n & 0x0f0f0f0f) << 4;
+			n = (n & 0xcccccccc) >> 2 | (n & 0x33333333) << 2;
+			n = (n & 0xaaaaaaaa) >> 1 | (n & 0x55555555) << 1;
+			n = n >> (32 - rs2);
+			regs.write(instr.rd(), (int32_t)n);
+		} break;
+
+		case Opcode::CLROV: {
+			// TODO
+		} break;
+
+		// SIMD 8-bit Count Leading Redundant Sign
+		case Opcode::CLRS8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			std::array<int32_t, 4> cnt = {};
+			const std::array<int32_t, 4> sign_bit = {
+			    (rs1[0] >> 7) & 1,
+			    (rs1[1] >> 7) & 1,
+			    (rs1[2] >> 7) & 1,
+			    (rs1[3] >> 7) & 1,
+			};
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				for (int32_t i = 6; i >= 0; --i) {
+					if (cnt[lane] + (((rs1[lane] >> i) & 1) == sign_bit[lane]))
+						++cnt[lane];
+					else
+						break;
+				}
+			}
+
+			regs.write8x4(instr.rd(), cnt);
+		} break;
+
+		// SIMD 16-bit Count Leading Redundant Sign
+		case Opcode::CLRS16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			std::array<int32_t, 2> cnt = {};
+			const std::array<int32_t, 2> sign_bit = {
+			    (rs1[0] >> 15) & 1,
+			    (rs1[1] >> 15) & 1,
+			};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				for (int32_t i = 14; i >= 0; --i) {
+					if (cnt[lane] + (((rs1[lane] >> i) & 1) == sign_bit[lane]))
+						++cnt[lane];
+					else
+						break;
+				}
+			}
+			regs.write16x2(instr.rd(), cnt);
+		} break;
+
+		// SIMD 32-bit Count Leading Redundant Sign
+		case Opcode::CLRS32: {
+			const auto rs1 = regs.read(instr.rs1());
+			int32_t cnt = {};
+			int32_t sign_bit = (rs1 >> 31) & 1;
+
+			for (int32_t i = 30; i >= 0; --i) {
+				if (cnt + (((rs1 >> i) & 1) == sign_bit))
+					++cnt;
+				else
+					break;
+			}
+
+			regs.write(instr.rd(), cnt);
+		} break;
+
+		// SIMD 8-bit Count Leading Zero
+		case Opcode::CLZ8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			std::array<int32_t, 4> cnt = {};
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				for (int32_t i = 0; i < 8; ++i) {
+					if (cnt[lane] + (((rs1[lane] >> i) & 1) == 0))
+						++cnt[lane];
+					else
+						break;
+				}
+			}
+			regs.write8x4(instr.rd(), cnt);
+		} break;
+
+		// SIMD 16-bit Count Leading Zero
+		case Opcode::CLZ16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			std::array<int32_t, 2> cnt = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				for (int32_t i = 0; i < 16; ++i) {
+					if (cnt[lane] + (((rs1[lane] >> i) & 1) == 0))
+						++cnt[lane];
+					else
+						break;
+				}
+			}
+			regs.write16x2(instr.rd(), cnt);
+		} break;
+
+		// SIMD 32-bit Count Leading Zero
+		case Opcode::CLZ32: {
+			const auto rs1 = regs.read(instr.rs1());
+			int32_t cnt = {};
+
+			for (int32_t i = 0; i < 32; ++i) {
+				if (cnt + (((rs1 >> i) & 1) == 0))
+					++cnt;
+				else
+					break;
+			}
+
+			regs.write(instr.rd(), cnt);
+		} break;
+
+		// SIMD 8-bit Integer Compare Equal
+		case Opcode::CMPEQ8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			std::array<int32_t, 4> rd = {};
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = rs1[lane] == rs2[lane];
+			}
+			regs.write8x4(instr.rd(), rd);
+		} break;
+
+		// SIMD 16-bit Integer Compare Equal
+		case Opcode::CMPEQ16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			std::array<int32_t, 2> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = rs1[lane] == rs2[lane] ? 0xFFFF'FFFF : 0;
+			}
+			regs.write16x2(instr.rd(), rd);
+		} break;
+
+		// SIMD 16-bit Cross Addition & Subtraction
+		case Opcode::CRAS16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			std::array<int32_t, 2> rd = {rs1[0] - rs2[1], rs1[1] + rs2[0]};
+			regs.write16x2(instr.rd(), rd);
+		} break;
+
+		// SIMD 16-bit Cross Subtraction & Addition
+		case Opcode::CRSA16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			std::array<int32_t, 2> rd = {rs1[0] + rs2[1], rs1[1] - rs2[0]};
+			regs.write16x2(instr.rd(), rd);
+		} break;
+
+		// Insert Byte
+		case Opcode::INSB: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			auto rd = regs.read8x4(instr.rd());
+			const auto imm = BIT_SLICE(instr.data(), 21, 20);
+
+			rd[imm] = rs1[0];
+			regs.write8x4(instr.rd(), rd);
+		} break;
+
+		// SIMD 8-Bit Saturating Absolute
+		case Opcode::KABS8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+
+			std::array<int32_t, 4> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = rs1[lane] == INT8_MIN ? INT8_MAX : abs(rs1[lane]);
+			}
+			regs.write8x4(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		// SIMD 16-Bit Saturating Absolute
+		case Opcode::KABS16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+
+			std::array<int32_t, 2> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = rs1[lane] == INT16_MIN ? INT16_MAX : abs(rs1[lane]);
+			}
+			regs.write16x2(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		// Scalar 32-bit Absolute Value with Saturation
+		case Opcode::KABSW: {
+			const auto rs1 = regs.read(instr.rs1());
+			int32_t rd = {};
+
+			rd = rs1 == INT32_MIN ? INT32_MAX : abs(rs1);
+			regs.write(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		// Scalar 32-bit Absolute Value with Saturation
+		case Opcode::KADD8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			bool ov = false;
+			regs.write8x4(instr.rd(), {
+			                              sat_add<int8_t>(&ov, rs1[0], rs2[0]),
+			                              sat_add<int8_t>(&ov, rs1[1], rs2[1]),
+			                              sat_add<int8_t>(&ov, rs1[2], rs2[2]),
+			                              sat_add<int8_t>(&ov, rs1[3], rs2[3]),
+			                          });
+			// TODO: OV
+		} break;
+
+		// SIMD 16-bit Signed Saturating Addition
+		case Opcode::KADD16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			bool ov = false;
+			regs.write16x2(instr.rd(), {
+			                               sat_add<int16_t>(&ov, rs1[0], rs2[0]),
+			                               sat_add<int16_t>(&ov, rs1[1], rs2[1]),
+			                           });
+			// TODO: OV
+		} break;
+
+		// 64-bit Signed Saturating Addition
+		case Opcode::KADD64: {
+			const auto rs1 = regs.read64x1(instr.rs1());
+			const auto rs2 = regs.read64x1(instr.rs2());
+			bool ov = false;
+			regs.write64x1(instr.rd(), sat_add<int64_t>(&ov, rs1, rs2));
+			// TODO: OV
+		} break;
+
+		// Signed Addition with Q15 Saturation
+		case Opcode::KADDH: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			bool ov = false;
+			regs.write(instr.rd(), sat_add<int16_t>(&ov, rs1[0], rs2[0]));
+			// TODO: OV
+		} break;
+
+		// Signed Addition with Q31 Saturation
+		case Opcode::KADDW: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			bool ov = false;
+			regs.write(instr.rd(), sat_add<int32_t>(&ov, rs1, rs2));
+			// TODO: OV
+		} break;
+
+		// SIMD 16-bit Signed Saturating Cross Addition & Subtraction
+		case Opcode::KCRAS16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			bool ov = false;
+			regs.write16x2(instr.rd(), {
+			                               sat_sub<int16_t>(&ov, rs1[0], rs2[1]),
+			                               sat_add<int16_t>(&ov, rs1[1], rs2[0]),
+			                           });
+			// TODO: OV
+		} break;
+
+		case Opcode::KCRSA16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			bool ov = false;
+			regs.write16x2(instr.rd(), {
+			                               sat_add<int16_t>(&ov, rs1[0], rs2[1]),
+			                               sat_sub<int16_t>(&ov, rs1[1], rs2[0]),
+			                           });
+			// TODO: OV
 		} break;
 
 			// instructions accepted by decoder but not by this RV32IMACFP ISS -> do normal trap
