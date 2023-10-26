@@ -1545,6 +1545,318 @@ void ISS::exec_step() {
 			// TODO: OV
 		} break;
 
+		case Opcode::KDMBB: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto res = rs1[0] * rs2[0];
+			const auto sat = rs1[0] == 0x8000 && rs2[0] == 0x8000;
+			regs.write(instr.rd(), sat ? INT32_MAX : res << 1);
+			// TODO: OV
+		} break;
+
+		case Opcode::KDMBT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto res = rs1[0] * rs2[1];
+			const auto sat = rs1[0] == 0x8000 && rs2[1] == 0x8000;
+			regs.write(instr.rd(), sat ? INT32_MAX : res << 1);
+			// TODO: OV
+		} break;
+
+		case Opcode::KDMTT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto res = rs1[1] * rs2[1];
+			const auto sat = rs1[1] == 0x8000 && rs2[1] == 0x8000;
+			regs.write(instr.rd(), sat ? INT32_MAX : res << 1);
+			// TODO: OV
+		} break;
+
+		case Opcode::KDMABB: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res = rs1[0] * rs2[0];
+			const auto sat = rs1[0] == 0x8000 && rs2[0] == 0x8000;
+			const auto sat_res = sat ? INT32_MAX : res << 1;
+			bool ov = false;
+			regs.write(instr.rd(), sat_add<int32_t>(&ov, rd, sat_res));
+			// TODO: OV
+		} break;
+
+		case Opcode::KDMABT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res = rs1[0] * rs2[1];
+			const auto sat = rs1[0] == 0x8000 && rs2[1] == 0x8000;
+			const auto sat_res = sat ? INT32_MAX : res << 1;
+			bool ov = false;
+			regs.write(instr.rd(), sat_add<int32_t>(&ov, rd, sat_res));
+			// TODO: OV
+		} break;
+
+		case Opcode::KDMATT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res = rs1[1] * rs2[1];
+			const auto sat = rs1[1] == 0x8000 && rs2[1] == 0x8000;
+			const auto sat_res = sat ? INT32_MAX : res << 1;
+			bool ov = false;
+			regs.write(instr.rd(), sat_add<int32_t>(&ov, rd, sat_res));
+			// TODO: OV
+		} break;
+
+		case Opcode::KHM8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+
+			std::array<bool, 4> ov = {};
+			std::array<int32_t, 4> rd = {};
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				const auto res = (rs1[lane] * rs2[lane]) >> 7;
+				ov[lane] = rs1[lane] == 0x80 && rs2[lane] == 0x80;
+				const auto sat_res = ov[lane] ? INT8_MAX : res;
+				rd[lane] = sat_res;
+			}
+			regs.write8x4(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		case Opcode::KHMX8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+
+			std::array<bool, 4> ov = {};
+			std::array<int32_t, 4> rd = {};
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				const auto res = (rs1[lane] * rs2[lane % 2 ? lane - 1 : lane + 1]) >> 7;
+				ov[lane] = rs1[lane] == 0x80 && rs2[lane % 2 ? lane - 1 : lane + 1] == 0x80;
+				const auto sat_res = ov[lane] ? INT8_MAX : res;
+				rd[lane] = sat_res;
+			}
+			regs.write8x4(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		case Opcode::KHM16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			std::array<bool, 2> ov = {};
+			std::array<int32_t, 2> rd = {};
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				const auto res = (rs1[lane] * rs2[lane]) >> 15;
+				ov[lane] = rs1[lane] == 0x8000 && rs2[lane] == 0x8000;
+				const auto sat_res = ov[lane] ? INT8_MAX : res;
+				rd[lane] = sat_res;
+			}
+			regs.write16x2(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		case Opcode::KHMX16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			std::array<bool, 2> ov = {};
+			std::array<int32_t, 2> rd = {};
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				const auto res = (rs1[lane] * rs2[lane % 2 ? lane - 1 : lane + 1]) >> 15;
+				ov[lane] = rs1[lane] == 0x8000 && rs2[lane % 2 ? lane - 1 : lane + 1] == 0x8000;
+				const auto sat_res = ov[lane] ? INT8_MAX : res;
+				rd[lane] = sat_res;
+			}
+			regs.write16x2(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		case Opcode::KHMBB: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto res = rs1[0] * rs2[0];
+			const auto sat = rs1[0] == 0x8000 && rs2[0] == 0x8000;
+			std::array<int32_t, 2> rd = {sat ? INT16_MAX : res >> 15, 0};
+			regs.write16x2(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		case Opcode::KHMBT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto res = rs1[0] * rs2[1];
+			const auto sat = rs1[0] == 0x8000 && rs2[1] == 0x8000;
+			std::array<int32_t, 2> rd = {sat ? INT16_MAX : res >> 15, 0};
+			regs.write16x2(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		case Opcode::KHMTT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto res = rs1[1] * rs2[1];
+			const auto sat = rs1[1] == 0x8000 && rs2[1] == 0x8000;
+			std::array<int32_t, 2> rd = {sat ? INT16_MAX : res >> 15, 0};
+			regs.write16x2(instr.rd(), rd);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMABB: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res = rs1[0] * rs2[0];
+			bool ov = false;
+			regs.write(instr.rd(), sat_add<int32_t>(&ov, res, rd));
+			// TODO: OV
+		} break;
+
+		case Opcode::KMABT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res = rs1[0] * rs2[1];
+			bool ov = false;
+			regs.write(instr.rd(), sat_add<int32_t>(&ov, res, rd));
+			// TODO: OV
+		} break;
+
+		case Opcode::KMATT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res = rs1[1] * rs2[1];
+			bool ov = false;
+			regs.write(instr.rd(), sat_add<int32_t>(&ov, res, rd));
+			// TODO: OV
+		} break;
+
+		case Opcode::KMADA: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res0 = rs1[0] * rs2[0];
+			const auto res1 = rs1[1] * rs2[1];
+			bool ov0 = false;
+			const auto res_tmp = sat_add<int32_t>(&ov0, res0, res1);
+			bool ov1 = false;
+			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMAXDA: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res0 = rs1[0] * rs2[1];
+			const auto res1 = rs1[1] * rs2[0];
+			bool ov0 = false;
+			const auto res_tmp = sat_add<int32_t>(&ov0, res0, res1);
+			bool ov1 = false;
+			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMADS: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res0 = rs1[0] * rs2[0];
+			const auto res1 = rs1[1] * rs2[1];
+			bool ov0 = false;
+			const auto res_tmp = sat_sub<int32_t>(&ov0, res1, res0);
+			bool ov1 = false;
+			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMADRS: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res0 = rs1[0] * rs2[0];
+			const auto res1 = rs1[1] * rs2[1];
+			bool ov0 = false;
+			const auto res_tmp = sat_sub<int32_t>(&ov0, res0, res1);
+			bool ov1 = false;
+			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMAXDS: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res0 = rs1[1] * rs2[0];
+			const auto res1 = rs1[0] * rs2[1];
+			bool ov0 = false;
+			const auto res_tmp = sat_sub<int32_t>(&ov0, res0, res1);
+			bool ov1 = false;
+			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMAR64: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+			const auto res = rs1 * rs2;
+			bool ov0 = false;
+			const auto res = sat_sub<int64_t>(&ov0, res, rd);
+			regs.write64x1(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMDA: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto res0 = rs1[0] * rs2[0];
+			const auto res1 = rs1[1] * rs2[1];
+			bool ov0 = false;
+			const auto res = sat_add<int32_t>(&ov0, res0, res1);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMXDA: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto res0 = rs1[0] * rs2[1];
+			const auto res1 = rs1[1] * rs2[0];
+			bool ov0 = false;
+			const auto res = sat_add<int32_t>(&ov0, res0, res1);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMMAC: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res = ((int64_t)rs1 * rs2) >> 32;
+			bool ov0 = false;
+			const auto res = sat_add<int32_t>(&ov0, res, rd);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
+		case Opcode::KMMAC_u: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			const auto res = ((((int64_t)rs1 * rs2) >> 31) + 1) >> 1;
+			bool ov0 = false;
+			const auto res = sat_add<int32_t>(&ov0, res, rd);
+			regs.write(instr.rd(), res);
+			// TODO: OV
+		} break;
+
 			// instructions accepted by decoder but not by this RV32IMACFP ISS -> do normal trap
 			// RV64I
 		case Opcode::LWU:
