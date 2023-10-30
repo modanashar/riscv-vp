@@ -48,6 +48,9 @@ struct RegFile {
 	std::array<int32_t, 4> read8x4(uint32_t index);
 	std::array<int32_t, 2> read16x2(uint32_t index);
 	std::array<int32_t, 2> read32x2(uint32_t index);
+	std::array<uint32_t, 4> uread8x4(uint32_t index);
+	std::array<uint32_t, 2> uread16x2(uint32_t index);
+	std::array<uint32_t, 2> uread32x2(uint32_t index);
 	int64_t read64x1(uint32_t index);
 
 	uint32_t shamt(uint32_t index);

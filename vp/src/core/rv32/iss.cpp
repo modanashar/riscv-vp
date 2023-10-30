@@ -111,6 +111,7 @@ int32_t RegFile::read(uint32_t index) {
 		throw std::out_of_range("out-of-range register access");
 	return regs[index];
 }
+
 std::array<int32_t, 4> RegFile::read8x4(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
@@ -123,6 +124,20 @@ std::array<int32_t, 4> RegFile::read8x4(uint32_t index) {
 	};
 	return {f[0], f[1], f[2], f[3]};
 }
+
+std::array<uint32_t, 4> RegFile::uread8x4(uint32_t index) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+
+	const auto f = std::array<int8_t, 4>{
+	    (uint8_t)((regs[index] >> 0) & 0xFF),
+	    (uint8_t)((regs[index] >> 8) & 0xFF),
+	    (uint8_t)((regs[index] >> 16) & 0xFF),
+	    (uint8_t)((regs[index] >> 24) & 0xFF),
+	};
+	return {f[0], f[1], f[2], f[3]};
+}
+
 std::array<int32_t, 2> RegFile::read16x2(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
@@ -132,7 +147,19 @@ std::array<int32_t, 2> RegFile::read16x2(uint32_t index) {
 	    (int16_t)((regs[index] >> 16) & 0xFFFF),
 	};
 	return {f[0], f[1]};
-};
+}
+
+std::array<uint32_t, 2> RegFile::uread16x2(uint32_t index) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+
+	const auto f = std::array<int16_t, 2>{
+	    (uint16_t)((regs[index] >> 0) & 0xFFFF),
+	    (uint16_t)((regs[index] >> 16) & 0xFFFF),
+	};
+	return {f[0], f[1]};
+}
+
 std::array<int32_t, 2> RegFile::read32x2(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
@@ -140,13 +167,22 @@ std::array<int32_t, 2> RegFile::read32x2(uint32_t index) {
 	    regs[index & ~1],
 	    regs[index | 1],
 	};
-};
+}
+
+std::array<uint32_t, 2> RegFile::uread32x2(uint32_t index) {
+	if (index > x31)
+		throw std::out_of_range("out-of-range register access");
+	return {
+	    regs[index & ~1],
+	    regs[index | 1],
+	};
+}
 
 int64_t RegFile::read64x1(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
 	return read32x2(index)[0] | (int64_t)read32x2(index)[1] << 32;
-};
+}
 
 uint32_t RegFile::shamt(uint32_t index) {
 	assert(index <= x31);
@@ -2168,16 +2204,18 @@ void ISS::exec_step() {
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = (regs.read(instr.rs2()) & 0xF) << (32 - 4) >> (32 - 4);
 
-			std::array<int32_t, 4> res;
+			std::array<int32_t, 4> res = rs1;
 
 			bool ov = false;
 			for (int32_t lane = 0; lane < 4; ++lane) {
-				res[lane] = rs2 > 0 ? rs1[lane] << rs2 : rs1[lane] >> -rs2;
+				if (rs2) {
+					res[lane] = rs2 > 0 ? rs1[lane] << rs2 : rs1[lane] >> -rs2;
 
-				const auto ov1 = res[lane] > INT8_MAX;
-				const auto ov2 = res[lane] < INT8_MIN;
-				res[lane] = ov1 ? INT8_MAX : ov2 ? INT8_MIN : res[lane];
-				ov |= ov1 || ov2;
+					const auto ov1 = res[lane] > INT8_MAX;
+					const auto ov2 = res[lane] < INT8_MIN;
+					res[lane] = ov1 ? INT8_MAX : ov2 ? INT8_MIN : res[lane];
+					ov |= ov1 || ov2;
+				}
 			}
 			regs.write8x4(instr.rd(), res);
 			// TODO: OV
@@ -2187,16 +2225,18 @@ void ISS::exec_step() {
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = (regs.read(instr.rs2()) & 0xF) << (32 - 4) >> (32 - 4);
 
-			std::array<int32_t, 4> res;
+			std::array<int32_t, 4> res = rs1;
 
 			bool ov = false;
 			for (int32_t lane = 0; lane < 4; ++lane) {
-				res[lane] = rs2 > 0 ? rs1[lane] << rs2 : ((rs1[lane] >> (-rs2 - 1)) + 1) >> 1;
+				if (rs2) {
+					res[lane] = rs2 > 0 ? rs1[lane] << rs2 : ((rs1[lane] >> (-rs2 - 1)) + 1) >> 1;
 
-				const auto ov1 = res[lane] > INT8_MAX;
-				const auto ov2 = res[lane] < INT8_MIN;
-				res[lane] = ov1 ? INT8_MAX : ov2 ? INT8_MIN : res[lane];
-				ov |= ov1 || ov2;
+					const auto ov1 = res[lane] > INT8_MAX;
+					const auto ov2 = res[lane] < INT8_MIN;
+					res[lane] = ov1 ? INT8_MAX : ov2 ? INT8_MIN : res[lane];
+					ov |= ov1 || ov2;
+				}
 			}
 			regs.write8x4(instr.rd(), res);
 			// TODO: OV
@@ -2379,7 +2419,6 @@ void ISS::exec_step() {
 			const auto res = (int64_t)rs1 * rs2 + rd;
 
 			regs.write(instr.rd(), res);
-			// TODO: OV
 		} break;
 
 		case Opcode::MSUBR32: {
@@ -2391,33 +2430,652 @@ void ISS::exec_step() {
 			const auto res = (int64_t)rd - (int64_t)rs1 * (int64_t)rs2;
 
 			regs.write(instr.rd(), res);
-			// TODO: OV
 		} break;
 
 		case Opcode::MULR64: {
-			const auto rs1 = regs.read(instr.rs1());
-			const auto rs2 = regs.read(instr.rs2());
-			const auto rd = regs.read(instr.rd());
+			const auto rs1 = (uint64_t)regs.read(instr.rs1());
+			const auto rs2 = (uint64_t)regs.read(instr.rs2());
 
-			const auto res = (uint64_t)rs1 * (uint64_t)rs2;
-
-			regs.write64x1(instr.rd(), res);
-			// TODO: OV
-		} break;
-
-		case Opcode::MULR64: {
-			const auto rs1 = regs.read(instr.rs1());
-			const auto rs2 = regs.read(instr.rs2());
-			const auto rd = regs.read(instr.rd());
-
-			const auto res = (int64_t)rs1 * (int64_t)rs2;
+			const auto res = rs1 * rs2;
 
 			regs.write64x1(instr.rd(), res);
-			// TODO: OV
 		} break;
 
-			// instructions accepted by decoder but not by this RV32IMACFP ISS -> do normal trap
-			// RV64I
+		case Opcode::MULSR64: {
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
+			const auto rs2 = (int64_t)regs.read(instr.rs2());
+
+			const auto res = rs1 * rs2;
+
+			regs.write64x1(instr.rd(), res);
+		} break;
+
+		case Opcode::PBSAD: {
+			const auto rs1 = regs.uread8x4(instr.rs1());
+			const auto rs2 = regs.uread8x4(instr.rs2());
+
+			uint32_t sum = 0;
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				sum += abs((uint32_t)rs1[lane] - (uint32_t)rs2[lane]);
+			}
+
+			regs.write(instr.rd(), sum);
+		} break;
+
+		case Opcode::PBSADA: {
+			const auto rs1 = regs.uread8x4(instr.rs1());
+			const auto rs2 = regs.uread8x4(instr.rs2());
+			auto sum = (uint32_t)regs.read(instr.rd());
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				sum += abs(rs1[lane] - rs2[lane]);
+			}
+
+			regs.write(instr.rd(), sum);
+		} break;
+
+		case Opcode::PKBB16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write16x2(instr.rd(), {rs2[0], rs1[0]});
+		}
+
+		case Opcode::PKBT16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write16x2(instr.rd(), {rs2[1], rs1[0]});
+		}
+
+		case Opcode::PKTB16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write16x2(instr.rd(), {rs2[0], rs1[1]});
+		}
+
+		case Opcode::PKTT16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write16x2(instr.rd(), {rs2[1], rs1[1]});
+		}
+
+		case Opcode::RADD8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			auto rd = regs.read8x4(instr.rd());
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = ((int64_t)rs1[lane] + rs2[lane]) >> 1;
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::RADD16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			std::array<int32_t, 2> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = ((int64_t)rs1[lane] + rs2[lane]) >> 1;
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::RADD64: {
+			const auto rs1 = regs.read64x1(instr.rs1());
+			const auto rs2 = regs.read64x1(instr.rs2());
+			const auto rd = (rs1 + rs2) >> 1;
+
+			regs.write64x1(instr.rd(), rd);
+		}
+
+		case Opcode::RADDW: {
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
+			const auto rs2 = (int64_t)regs.read(instr.rs2());
+			const auto rd = (rs1 + rs2) >> 1;
+
+			regs.write(instr.rd(), rd);
+		}
+
+		case Opcode::RCRAS16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write(instr.rd(), {rs1[0] - rs2[1], rs1[1] + rs2[0]});
+		}
+
+		case Opcode::RCRSA16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write(instr.rd(), {rs1[0] + rs2[1], rs1[1] - rs2[0]});
+		}
+
+		case Opcode::RDOV: {
+			// TODO: OV
+		}
+
+		case Opcode::RSTAS16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write(instr.rd(), {rs1[0] - rs2[0], rs1[1] + rs2[1]});
+		}
+
+		case Opcode::RSTAS16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write(instr.rd(), {rs1[0] - rs2[0], rs1[1] + rs2[1]});
+		}
+
+		case Opcode::RSTSA16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write(instr.rd(), {rs1[0] + rs2[0], rs1[1] - rs2[1]});
+		}
+
+		case Opcode::RSUB8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			auto rd = regs.read8x4(instr.rd());
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = ((int64_t)rs1[lane] - rs2[lane]) >> 1;
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::RSUB16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			std::array<int32_t, 2> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = ((int64_t)rs1[lane] - rs2[lane]) >> 1;
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::RSUB64: {
+			const auto rs1 = regs.read64x1(instr.rs1());
+			const auto rs2 = regs.read64x1(instr.rs2());
+			const auto rd = (rs1 - rs2) >> 1;
+
+			regs.write64x1(instr.rd(), rd);
+		}
+
+		case Opcode::RSUBW: {
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
+			const auto rs2 = (int64_t)regs.read(instr.rs2());
+			const auto rd = (rs1 - rs2) >> 1;
+
+			regs.write(instr.rd(), rd);
+		}
+
+		case Opcode::SCLIP8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto imm = BIT_SLICE(instr.data(), 22, 20);
+			const auto max_val = (1 << imm) - 1;
+			const auto min_val = -(1 << imm);
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = min(max(max_val, rs1[lane]), min_val);
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::SCLIP16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto imm = BIT_SLICE(instr.data(), 22, 20);
+			const auto max_val = (1 << imm) - 1;
+			const auto min_val = -(1 << imm);
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = min(max(max_val, rs1[lane]), min_val);
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::SCLIP32: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto imm = BIT_SLICE(instr.data(), 24, 20);
+			const auto max_val = (1 << imm) - 1;
+			const auto min_val = -(1 << imm);
+			rd[lane] = min(max(max_val, rs1[lane]), min_val);
+			regs.write(instr.rd(), rd);
+		}
+
+		case Opcode::SCLIP32: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto imm = BIT_SLICE(instr.data(), 24, 20);
+			const auto max_val = (1 << imm) - 1;
+			const auto min_val = -(1 << imm);
+			rd[lane] = min(max(max_val, rs1[lane]), min_val);
+			regs.write(instr.rd(), rd);
+		}
+
+		case Opcode::SCMPLE8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			std::array<int32_t, 4> rd = {};
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = rs1[lane] <= rs2[lane] ? 0xFF : 0;
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::SCMPLE16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			std::array<int32_t, 2> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = rs1[lane] <= rs2[lane] ? 0xFFFF : 0;
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::SCMPLT8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			std::array<int32_t, 4> rd = {};
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = rs1[lane] < rs2[lane] ? 0xFF : 0;
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::SCMPLT16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			std::array<int32_t, 2> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = rs1[lane] < rs2[lane] ? 0xFFFF : 0;
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::SLL8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2()) & 0x7;
+			std::array<int32_t, 4> rd = {};
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = rs1[lane] << rs2;
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::SLLI8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = instr.rs2() & 0x7;
+			std::array<int32_t, 4> rd = {};
+
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = rs1[lane] << rs2;
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::SLL16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2()) & 0xF;
+			std::array<int32_t, 2> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = rs1[lane] << rs2;
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::SLLI16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = instr.rs2() & 0xF;
+			std::array<int32_t, 2> rd = {};
+
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = rs1[lane] << rs2;
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::SMAL: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read64x1(instr.rs2());
+			regs.write64x1(instr.rd(), rs1 + rs2[0] * rs2[1]);
+		}
+
+		case Opcode::SMALBB: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[0]);
+		}
+
+		case Opcode::SMALBT: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[1]);
+		}
+
+		case Opcode::SMALDA: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd + rs1[1] * rs2[1] + rs1[0] * rs2[0]);
+		}
+
+		case Opcode::SMALXDA: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[1] + rs1[1] * rs2[0]);
+		}
+
+		case Opcode::SMALDAS: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd + (rs1[1] * rs2[1] - rs1[0] * rs2[0]));
+		}
+
+		case Opcode::SMALDARS: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd + (rs1[0] * rs2[0] - rs1[1] * rs2[1]));
+		}
+
+		case Opcode::SMAR64: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd + rs1 * rs2);
+		}
+
+		case Opcode::SMAQA: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			int64_t sum = 0;
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				sum += (int64_t)rs1[lane] * (int64_t)rs2[lane];
+			}
+
+			regs.write(instr.rd(), rd + sum);
+		}
+
+		case Opcode::SMAQA_su: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			const auto rd = regs.read(instr.rd());
+			int64_t sum = 0;
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				sum += (int64_t)rs1[lane] * (uint64_t)rs2[lane];
+			}
+
+			regs.write(instr.rd(), rd + sum);
+		}
+
+		case Opcode::SMAX8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+
+			std::array<int32_t, 4> rd = {};
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = max(rs1[lane], rs2[lane]);
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::SMAX16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			std::array<int32_t, 2> rd = {};
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = max(rs1[lane], rs2[lane]);
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::SMDS: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write(instr.rd(), rs1[1] * rs2[1] - rs1[0] * rs2[0]);
+		}
+
+		case Opcode::SMDRS: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write(instr.rd(), rs1[0] * rs2[0] - rs1[1] * rs2[1]);
+		}
+
+		case Opcode::SMXDS: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			regs.write(instr.rd(), rs1[1] * rs2[0] - rs1[0] * rs2[1]);
+		}
+
+		case Opcode::SMIN8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+
+			std::array<int32_t, 4> rd = {};
+			for (int32_t lane = 0; lane < 4; ++lane) {
+				rd[lane] = min(rs1[lane], rs2[lane]);
+			}
+
+			regs.write8x4(instr.rd(), rd);
+		}
+
+		case Opcode::SMIN16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+
+			std::array<int32_t, 2> rd = {};
+			for (int32_t lane = 0; lane < 2; ++lane) {
+				rd[lane] = min(rs1[lane], rs2[lane]);
+			}
+
+			regs.write16x2(instr.rd(), rd);
+		}
+
+		case Opcode::SMMUL: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			const auto rd = (int64_t)rs1 * rs2;
+
+			regs.write(instr.rd(), rd >> 32);
+		} break;
+
+		case Opcode::SMMUL_u: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			const auto rd = (int64_t)rs1 * rs2;
+
+			regs.write(instr.rd(), ((rd >> 31) + 1) >> 1);
+		} break;
+
+		case Opcode::SMMWB: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = (int64_t)rs1 * rs2[0];
+
+			regs.write(instr.rd(), rd >> 16);
+		} break;
+
+		case Opcode::SMMWB_u: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = (int64_t)rs1 * rs2[0];
+
+			regs.write(instr.rd(), ((rd >> 15) + 1) >> 1);
+		} break;
+
+		case Opcode::SMMWT: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = (int64_t)rs1 * rs2[1];
+
+			regs.write(instr.rd(), rd >> 16);
+		} break;
+
+		case Opcode::SMMWT_u: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = (int64_t)rs1 * rs2[1];
+
+			regs.write(instr.rd(), ((rd >> 15) + 1) >> 1);
+		} break;
+
+		case Opcode::SMSLDA: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = (int64_t)rs1 * rs2[1];
+
+			regs.write(instr.rd(), rd >> 16);
+		} break;
+
+		case Opcode::SMSLDA_u: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = (int64_t)rs1 * rs2[1];
+
+			regs.write(instr.rd(), ((rd >> 15) + 1) >> 1);
+		} break;
+
+		case Opcode::SMSLDA: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd - rs1[1] * rs2[1] - rs1[0] * rs2[0]);
+		}
+
+		case Opcode::SMSLXDA: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd - rs1[0] * rs2[1] - rs1[1] * rs2[0]);
+		}
+
+		case Opcode::SMSR64: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+
+			regs.write64x1(instr.rd(), rd - rs1 * rs2);
+		}
+
+		case Opcode::SMUL8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			regs.write8x4(instr.rd(), {
+			                              rs1[0] * rs2[0],
+			                              rs1[1] * rs2[1],
+			                              rs1[2] * rs2[2],
+			                              rs1[3] * rs2[3],
+			                          });
+		} break;
+
+		case Opcode::SMULX8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			regs.write8x4(instr.rd(), {
+			                              rs1[0] * rs2[1],
+			                              rs1[1] * rs2[0],
+			                              rs1[2] * rs2[3],
+			                              rs1[3] * rs2[2],
+			                          });
+		} break;
+
+		case Opcode::SMULX8: {
+			const auto rs1 = regs.read8x4(instr.rs1());
+			const auto rs2 = regs.read8x4(instr.rs2());
+			regs.write8x4(instr.rd(), {
+			                              rs1[0] * rs2[1],
+			                              rs1[1] * rs2[0],
+			                              rs1[2] * rs2[3],
+			                              rs1[3] * rs2[2],
+			                          });
+		} break;
+
+		case Opcode::SMUL16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			regs.write16x2(instr.rd(), {
+			                               rs1[0] * rs2[0],
+			                               rs1[1] * rs2[1],
+			                           });
+		} break;
+
+		case Opcode::SMULX16: {
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			regs.write16x2(instr.rd(), {
+			                               rs1[0] * rs2[1],
+			                               rs1[1] * rs2[0],
+			                           });
+		} break;
+
+		case Opcode::SRA_u: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = regs.read(instr.rs2()) & 0x1F;
+
+			if (rs2)
+				regs.write(instr.rd(), ((rs1 >> (rs1 - 1)) + 1) >> 1);
+			else
+				regs.write(instr.rd(), rs1);
+		} break;
+
+		case Opcode::SRAI_u: {
+			const auto rs1 = regs.read(instr.rs1());
+			const auto rs2 = instr.rs2() & 0x1F;
+
+			if (rs2)
+				regs.write(instr.rd(), ((rs1 >> (rs1 - 1)) + 1) >> 1);
+			else
+				regs.write(instr.rd(), rs1);
+		} break;
+
+		// instructions accepted by decoder but not by this RV32IMACFP ISS -> do normal trap
+		// RV64I
 		case Opcode::LWU:
 		case Opcode::LD:
 		case Opcode::SD:
