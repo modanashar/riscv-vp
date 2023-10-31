@@ -44,14 +44,23 @@ struct RegFile {
 	void write32x2(uint32_t index, std::array<int32_t, 2> value);
 	void write64x1(uint32_t index, int64_t value);
 
+	void uwrite(uint32_t index, uint32_t value);
+	void uwrite8x4(uint32_t index, std::array<uint32_t, 4> value);
+	void uwrite16x2(uint32_t index, std::array<uint32_t, 2> value);
+	void uwrite32x2(uint32_t index, std::array<uint32_t, 2> value);
+	void uwrite64x1(uint32_t index, uint64_t value);
+
 	int32_t read(uint32_t index);
 	std::array<int32_t, 4> read8x4(uint32_t index);
 	std::array<int32_t, 2> read16x2(uint32_t index);
 	std::array<int32_t, 2> read32x2(uint32_t index);
+	int64_t read64x1(uint32_t index);
+
+	uint32_t uread(uint32_t index);
 	std::array<uint32_t, 4> uread8x4(uint32_t index);
 	std::array<uint32_t, 2> uread16x2(uint32_t index);
 	std::array<uint32_t, 2> uread32x2(uint32_t index);
-	int64_t read64x1(uint32_t index);
+	uint64_t uread64x1(uint32_t index);
 
 	uint32_t shamt(uint32_t index);
 
