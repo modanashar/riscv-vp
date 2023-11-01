@@ -47,8 +47,6 @@ static T sat_add(bool *out_ov, int64_t a, int64_t b) {
 		*out_ov = true;
 		return lo;
 	}
-
-	*out_ov = false;
 	return static_cast<T>(a + b);
 }
 
@@ -62,8 +60,6 @@ static T sat_sub(bool *out_ov, int64_t a, int64_t b) {
 		*out_ov = true;
 		return hi;
 	}
-
-	*out_ov = false;
 	return static_cast<T>(a - b);
 }
 
@@ -73,8 +69,6 @@ static T sat_uadd(bool *out_ov, uint64_t a, uint64_t b) {
 		*out_ov = true;
 		return hi;
 	}
-
-	*out_ov = false;
 	return static_cast<T>(a + b);
 }
 
@@ -88,8 +82,6 @@ static T sat_usub(bool *out_ov, uint64_t a, uint64_t b) {
 		*out_ov = true;
 		return hi;
 	}
-
-	*out_ov = false;
 	return static_cast<T>(a - b);
 }
 
@@ -104,6 +96,10 @@ RegFile::RegFile(const RegFile &other) {
 void RegFile::write(uint32_t index, int32_t value) {
 	assert(index <= x31);
 	regs[index] = value;
+}
+void RegFile::uwrite(uint32_t index, uint32_t value) {
+	assert(index <= x31);
+	regs[index] = (int32_t)value;
 }
 void RegFile::write8x4(uint32_t index, std::array<int32_t, 4> value) {
 	if (index > x31)
@@ -186,7 +182,7 @@ std::array<uint32_t, 4> RegFile::uread8x4(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
 
-	const auto f = std::array<int8_t, 4>{
+	const auto f = std::array<uint8_t, 4>{
 	    (uint8_t)((regs[index] >> 0) & 0xFF),
 	    (uint8_t)((regs[index] >> 8) & 0xFF),
 	    (uint8_t)((regs[index] >> 16) & 0xFF),
@@ -210,7 +206,7 @@ std::array<uint32_t, 2> RegFile::uread16x2(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
 
-	const auto f = std::array<int16_t, 2>{
+	const auto f = std::array<uint16_t, 2>{
 	    (uint16_t)((regs[index] >> 0) & 0xFFFF),
 	    (uint16_t)((regs[index] >> 16) & 0xFFFF),
 	};
@@ -230,8 +226,8 @@ std::array<uint32_t, 2> RegFile::uread32x2(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
 	return {
-	    regs[index & ~1],
-	    regs[index | 1],
+	    (uint32_t)regs[index & ~1],
+	    (uint32_t)regs[index | 1],
 	};
 }
 
@@ -1310,6 +1306,7 @@ void ISS::exec_step() {
 		// *** P Extension ***
 		// SIMD Add 8-bit
 		case Opcode::ADD8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			regs.write8x4(instr.rd(), {
@@ -1322,6 +1319,7 @@ void ISS::exec_step() {
 
 		// SIMD Add 16-bit
 		case Opcode::ADD16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			regs.write16x2(instr.rd(), {
@@ -1332,6 +1330,7 @@ void ISS::exec_step() {
 
 		// SIMD Add 64-bit
 		case Opcode::ADD64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
 			const auto rs2 = regs.read64x1(instr.rs2());
 			regs.write64x1(instr.rd(), rs1 + rs2);
@@ -1339,6 +1338,7 @@ void ISS::exec_step() {
 
 		// Average with rounding
 		case Opcode::AVE: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			regs.write(instr.rd(), (int32_t)(((int64_t)rs1 + rs2 + 1) >> 1));
@@ -1346,6 +1346,7 @@ void ISS::exec_step() {
 
 		// Bit Reverse
 		case Opcode::BITREV: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint32_t)regs.read(instr.rs1());
 			const auto rs2 = (uint32_t)regs.read(instr.rs2());
 			auto n = rs1;
@@ -1360,6 +1361,7 @@ void ISS::exec_step() {
 
 		// Bit Reverse Immediate
 		case Opcode::BITREVI: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint32_t)regs.read(instr.rs1());
 			const auto rs2 = (uint32_t)instr.rs2();
 			auto n = rs1;
@@ -1372,12 +1374,9 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), (int32_t)n);
 		} break;
 
-		case Opcode::CLROV: {
-			// TODO
-		} break;
-
 		// SIMD 8-bit Count Leading Redundant Sign
 		case Opcode::CLRS8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			std::array<int32_t, 4> cnt = {};
 			const std::array<int32_t, 4> sign_bit = {
@@ -1401,6 +1400,7 @@ void ISS::exec_step() {
 
 		// SIMD 16-bit Count Leading Redundant Sign
 		case Opcode::CLRS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			std::array<int32_t, 2> cnt = {};
 			const std::array<int32_t, 2> sign_bit = {
@@ -1421,6 +1421,7 @@ void ISS::exec_step() {
 
 		// SIMD 32-bit Count Leading Redundant Sign
 		case Opcode::CLRS32: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			int32_t cnt = {};
 			int32_t sign_bit = (rs1 >> 31) & 1;
@@ -1437,6 +1438,7 @@ void ISS::exec_step() {
 
 		// SIMD 8-bit Count Leading Zero
 		case Opcode::CLZ8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			std::array<int32_t, 4> cnt = {};
 
@@ -1453,6 +1455,7 @@ void ISS::exec_step() {
 
 		// SIMD 16-bit Count Leading Zero
 		case Opcode::CLZ16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			std::array<int32_t, 2> cnt = {};
 
@@ -1469,6 +1472,7 @@ void ISS::exec_step() {
 
 		// SIMD 32-bit Count Leading Zero
 		case Opcode::CLZ32: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			int32_t cnt = {};
 
@@ -1484,6 +1488,7 @@ void ISS::exec_step() {
 
 		// SIMD 8-bit Integer Compare Equal
 		case Opcode::CMPEQ8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			std::array<int32_t, 4> rd = {};
@@ -1496,6 +1501,7 @@ void ISS::exec_step() {
 
 		// SIMD 16-bit Integer Compare Equal
 		case Opcode::CMPEQ16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			std::array<int32_t, 2> rd = {};
@@ -1508,6 +1514,7 @@ void ISS::exec_step() {
 
 		// SIMD 16-bit Cross Addition & Subtraction
 		case Opcode::CRAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			std::array<int32_t, 2> rd = {rs1[0] - rs2[1], rs1[1] + rs2[0]};
@@ -1516,6 +1523,7 @@ void ISS::exec_step() {
 
 		// SIMD 16-bit Cross Subtraction & Addition
 		case Opcode::CRSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			std::array<int32_t, 2> rd = {rs1[0] + rs2[1], rs1[1] - rs2[0]};
@@ -1524,52 +1532,57 @@ void ISS::exec_step() {
 
 		// Insert Byte
 		case Opcode::INSB: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			auto rd = regs.read8x4(instr.rd());
 			const auto imm = BIT_SLICE(instr.data(), 21, 20);
-
 			rd[imm] = rs1[0];
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
 		// SIMD 8-Bit Saturating Absolute
 		case Opcode::KABS8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
-
 			std::array<int32_t, 4> rd = {};
-
+			bool ov = false;
 			for (int32_t lane = 0; lane < 2; ++lane) {
-				rd[lane] = rs1[lane] == INT8_MIN ? INT8_MAX : abs(rs1[lane]);
+				const auto sat = rs1[lane] == INT8_MIN;
+				rd[lane] = sat ? INT8_MAX : abs(rs1[lane]);
+				ov |= sat;
 			}
 			regs.write8x4(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// SIMD 16-Bit Saturating Absolute
 		case Opcode::KABS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
-
 			std::array<int32_t, 2> rd = {};
-
+			bool ov = false;
 			for (int32_t lane = 0; lane < 2; ++lane) {
-				rd[lane] = rs1[lane] == INT16_MIN ? INT16_MAX : abs(rs1[lane]);
+				ov |= rs1[lane] == INT16_MIN;
+				rd[lane] = ov ? INT16_MAX : abs(rs1[lane]);
 			}
 			regs.write16x2(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// Scalar 32-bit Absolute Value with Saturation
 		case Opcode::KABSW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			int32_t rd = {};
-
-			rd = rs1 == INT32_MIN ? INT32_MAX : abs(rs1);
+			const auto ov = rs1 == INT32_MIN;
+			rd = ov ? INT32_MAX : abs(rs1);
 			regs.write(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// Scalar 32-bit Absolute Value with Saturation
 		case Opcode::KADD8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			bool ov = false;
@@ -1579,11 +1592,12 @@ void ISS::exec_step() {
 			                              sat_add<int8_t>(&ov, rs1[2], rs2[2]),
 			                              sat_add<int8_t>(&ov, rs1[3], rs2[3]),
 			                          });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// SIMD 16-bit Signed Saturating Addition
 		case Opcode::KADD16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			bool ov = false;
@@ -1591,38 +1605,42 @@ void ISS::exec_step() {
 			                               sat_add<int16_t>(&ov, rs1[0], rs2[0]),
 			                               sat_add<int16_t>(&ov, rs1[1], rs2[1]),
 			                           });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// 64-bit Signed Saturating Addition
 		case Opcode::KADD64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
 			const auto rs2 = regs.read64x1(instr.rs2());
 			bool ov = false;
 			regs.write64x1(instr.rd(), sat_add<int64_t>(&ov, rs1, rs2));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// Signed Addition with Q15 Saturation
 		case Opcode::KADDH: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			bool ov = false;
 			regs.write(instr.rd(), sat_add<int16_t>(&ov, rs1[0], rs2[0]));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// Signed Addition with Q31 Saturation
 		case Opcode::KADDW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			bool ov = false;
 			regs.write(instr.rd(), sat_add<int32_t>(&ov, rs1, rs2));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// SIMD 16-bit Signed Saturating Cross Addition & Subtraction
 		case Opcode::KCRAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			bool ov = false;
@@ -1630,10 +1648,12 @@ void ISS::exec_step() {
 			                               sat_sub<int16_t>(&ov, rs1[0], rs2[1]),
 			                               sat_add<int16_t>(&ov, rs1[1], rs2[0]),
 			                           });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Signed Saturating Cross Subtraction & Addition
 		case Opcode::KCRSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			bool ov = false;
@@ -1641,76 +1661,86 @@ void ISS::exec_step() {
 			                               sat_add<int16_t>(&ov, rs1[0], rs2[1]),
 			                               sat_sub<int16_t>(&ov, rs1[1], rs2[0]),
 			                           });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Saturating Double Multiply B16 x B16
 		case Opcode::KDMBB: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto res = rs1[0] * rs2[0];
-			const auto sat = rs1[0] == 0x8000 && rs2[0] == 0x8000;
-			regs.write(instr.rd(), sat ? INT32_MAX : res << 1);
-			// TODO: OV
+			const auto ov = rs1[0] == 0x8000 && rs2[0] == 0x8000;
+			regs.write(instr.rd(), ov ? INT32_MAX : res << 1);
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Saturating Double Multiply B16 x T16
 		case Opcode::KDMBT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto res = rs1[0] * rs2[1];
-			const auto sat = rs1[0] == 0x8000 && rs2[1] == 0x8000;
-			regs.write(instr.rd(), sat ? INT32_MAX : res << 1);
-			// TODO: OV
+			const auto ov = rs1[0] == 0x8000 && rs2[1] == 0x8000;
+			regs.write(instr.rd(), ov ? INT32_MAX : res << 1);
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Saturating Double Multiply T16 x T16
 		case Opcode::KDMTT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto res = rs1[1] * rs2[1];
-			const auto sat = rs1[1] == 0x8000 && rs2[1] == 0x8000;
-			regs.write(instr.rd(), sat ? INT32_MAX : res << 1);
-			// TODO: OV
+			const auto ov = rs1[1] == 0x8000 && rs2[1] == 0x8000;
+			regs.write(instr.rd(), ov ? INT32_MAX : res << 1);
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Saturating Double Multiply Addition B16 x B16
 		case Opcode::KDMABB: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res = rs1[0] * rs2[0];
-			const auto sat = rs1[0] == 0x8000 && rs2[0] == 0x8000;
-			const auto sat_res = sat ? INT32_MAX : res << 1;
-			bool ov = false;
+			auto ov = rs1[0] == 0x8000 && rs2[0] == 0x8000;
+			const auto sat_res = ov ? INT32_MAX : res << 1;
 			regs.write(instr.rd(), sat_add<int32_t>(&ov, rd, sat_res));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Saturating Double Multiply Addition B16 x T16
 		case Opcode::KDMABT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res = rs1[0] * rs2[1];
-			const auto sat = rs1[0] == 0x8000 && rs2[1] == 0x8000;
-			const auto sat_res = sat ? INT32_MAX : res << 1;
-			bool ov = false;
+			auto ov = rs1[0] == 0x8000 && rs2[1] == 0x8000;
+			const auto sat_res = ov ? INT32_MAX : res << 1;
 			regs.write(instr.rd(), sat_add<int32_t>(&ov, rd, sat_res));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Saturating Double Multiply Addition T16 x T16
 		case Opcode::KDMATT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res = rs1[1] * rs2[1];
-			const auto sat = rs1[1] == 0x8000 && rs2[1] == 0x8000;
-			const auto sat_res = sat ? INT32_MAX : res << 1;
-			bool ov = false;
+			auto ov = rs1[1] == 0x8000 && rs2[1] == 0x8000;
+			const auto sat_res = ov ? INT32_MAX : res << 1;
 			regs.write(instr.rd(), sat_add<int32_t>(&ov, rd, sat_res));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Signed Saturating Q7 Multiply
 		case Opcode::KHM8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
-
 			std::array<bool, 4> ov = {};
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
@@ -1720,13 +1750,14 @@ void ISS::exec_step() {
 				rd[lane] = sat_res;
 			}
 			regs.write8x4(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov[0] | ov[1] | ov[2] | ov[3];
 		} break;
 
+		// SIMD Signed Saturating Crossed Q7 Multiply
 		case Opcode::KHMX8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
-
 			std::array<bool, 4> ov = {};
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
@@ -1736,13 +1767,14 @@ void ISS::exec_step() {
 				rd[lane] = sat_res;
 			}
 			regs.write8x4(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov[0] | ov[1] | ov[2] | ov[3];
 		} break;
 
+		// SIMD Signed Saturating Q15 Multiply
 		case Opcode::KHM16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			std::array<bool, 2> ov = {};
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
@@ -1752,13 +1784,14 @@ void ISS::exec_step() {
 				rd[lane] = sat_res;
 			}
 			regs.write16x2(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov[0] | ov[1];
 		} break;
 
+		// SIMD Signed Saturating Crossed Q15 Multiply
 		case Opcode::KHMX16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			std::array<bool, 2> ov = {};
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
@@ -1768,512 +1801,512 @@ void ISS::exec_step() {
 				rd[lane] = sat_res;
 			}
 			regs.write16x2(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov[0] | ov[1];
 		} break;
 
+		// Signed Saturating Half Multiply B16 x B16
 		case Opcode::KHMBB: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto res = rs1[0] * rs2[0];
-			const auto sat = rs1[0] == 0x8000 && rs2[0] == 0x8000;
-			std::array<int32_t, 2> rd = {sat ? INT16_MAX : res >> 15, 0};
+			const auto ov = rs1[0] == 0x8000 && rs2[0] == 0x8000;
+			std::array<int32_t, 2> rd = {ov ? INT16_MAX : res >> 15, 0};
 			regs.write16x2(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Saturating Half Multiply B16 x T16
 		case Opcode::KHMBT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto res = rs1[0] * rs2[1];
-			const auto sat = rs1[0] == 0x8000 && rs2[1] == 0x8000;
-			std::array<int32_t, 2> rd = {sat ? INT16_MAX : res >> 15, 0};
+			const auto ov = rs1[0] == 0x8000 && rs2[1] == 0x8000;
+			std::array<int32_t, 2> rd = {ov ? INT16_MAX : res >> 15, 0};
 			regs.write16x2(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Saturating Half Multiply T16 x T16
 		case Opcode::KHMTT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto res = rs1[1] * rs2[1];
-			const auto sat = rs1[1] == 0x8000 && rs2[1] == 0x8000;
-			std::array<int32_t, 2> rd = {sat ? INT16_MAX : res >> 15, 0};
+			const auto ov = rs1[1] == 0x8000 && rs2[1] == 0x8000;
+			std::array<int32_t, 2> rd = {ov ? INT16_MAX : res >> 15, 0};
 			regs.write16x2(instr.rd(), rd);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Multiply Bottom Halfs & Add
 		case Opcode::KMABB: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res = rs1[0] * rs2[0];
 			bool ov = false;
 			regs.write(instr.rd(), sat_add<int32_t>(&ov, res, rd));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Multiply Bottom & Top Halfs & Add
 		case Opcode::KMABT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res = rs1[0] * rs2[1];
 			bool ov = false;
 			regs.write(instr.rd(), sat_add<int32_t>(&ov, res, rd));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Multiply Top Halfs & Add
 		case Opcode::KMATT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res = rs1[1] * rs2[1];
 			bool ov = false;
 			regs.write(instr.rd(), sat_add<int32_t>(&ov, res, rd));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Multiply Two Halfs and Two Adds
 		case Opcode::KMADA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res0 = rs1[0] * rs2[0];
 			const auto res1 = rs1[1] * rs2[1];
-			bool ov0 = false;
-			const auto res_tmp = sat_add<int32_t>(&ov0, res0, res1);
-			bool ov1 = false;
-			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			bool ov = false;
+			const auto res_tmp = sat_add<int32_t>(&ov, res0, res1);
+			const auto res = sat_add<int32_t>(&ov, res_tmp, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Crossed Multiply Two Halfs and Two Adds
 		case Opcode::KMAXDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res0 = rs1[0] * rs2[1];
 			const auto res1 = rs1[1] * rs2[0];
-			bool ov0 = false;
-			const auto res_tmp = sat_add<int32_t>(&ov0, res0, res1);
-			bool ov1 = false;
-			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			bool ov = false;
+			const auto res_tmp = sat_add<int32_t>(&ov, res0, res1);
+			const auto res = sat_add<int32_t>(&ov, res_tmp, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMADS: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res0 = rs1[0] * rs2[0];
 			const auto res1 = rs1[1] * rs2[1];
-			bool ov0 = false;
-			const auto res_tmp = sat_sub<int32_t>(&ov0, res1, res0);
-			bool ov1 = false;
-			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			bool ov = false;
+			const auto res_tmp = sat_sub<int32_t>(&ov, res1, res0);
+			const auto res = sat_add<int32_t>(&ov, res_tmp, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMADRS: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res0 = rs1[0] * rs2[0];
 			const auto res1 = rs1[1] * rs2[1];
-			bool ov0 = false;
-			const auto res_tmp = sat_sub<int32_t>(&ov0, res0, res1);
-			bool ov1 = false;
-			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			bool ov = false;
+			const auto res_tmp = sat_sub<int32_t>(&ov, res0, res1);
+			const auto res = sat_add<int32_t>(&ov, res_tmp, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMAXDS: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res0 = rs1[1] * rs2[0];
 			const auto res1 = rs1[0] * rs2[1];
-			bool ov0 = false;
-			const auto res_tmp = sat_sub<int32_t>(&ov0, res0, res1);
-			bool ov1 = false;
-			const auto res = sat_add<int32_t>(&ov1, res_tmp, rd);
+			bool ov = false;
+			const auto res_tmp = sat_sub<int32_t>(&ov, res0, res1);
+			const auto res = sat_add<int32_t>(&ov, res_tmp, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMAR64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
 			const auto res = rs1 * rs2;
-			bool ov0 = false;
-			const auto res = sat_add<int64_t>(&ov0, res, rd);
-			regs.write64x1(instr.rd(), res);
-			// TODO: OV
+			bool ov = false;
+			const auto res2 = sat_add<int64_t>(&ov, res, rd);
+			regs.write64x1(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto res0 = rs1[0] * rs2[0];
 			const auto res1 = rs1[1] * rs2[1];
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res0, res1);
+			bool ov = false;
+			const auto res = sat_add<int32_t>(&ov, res0, res1);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMXDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto res0 = rs1[0] * rs2[1];
 			const auto res1 = rs1[1] * rs2[0];
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res0, res1);
+			bool ov = false;
+			const auto res = sat_add<int32_t>(&ov, res0, res1);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAC: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto res = ((int64_t)rs1 * rs2) >> 32;
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res, rd);
-			regs.write(instr.rd(), res);
-			// TODO: OV
+			bool ov = false;
+			const auto res2 = sat_add<int32_t>(&ov, res, rd);
+			regs.write(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAC_u: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-			const auto res = ((((int64_t)rs1 * rs2) >> 31) + 1) >> 1;
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res, rd);
-			regs.write(instr.rd(), res);
-			// TODO: OV
+			const auto res = (((rs1 * rs2) >> 31) + 1) >> 1;
+			bool ov = false;
+			const auto res2 = sat_add<int32_t>(&ov, res, rd);
+			regs.write(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAWB: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-			const auto res = ((int64_t)rs1 * rs2[0]) >> 16;
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res, rd);
-			regs.write(instr.rd(), res);
-			// TODO: OV
+			const auto res = (rs1 * rs2[0]) >> 16;
+			bool ov = false;
+			const auto res2 = sat_add<int32_t>(&ov, res, rd);
+			regs.write(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAWB_u: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-			const auto res = ((((int64_t)rs1 * rs2[0]) >> 15) + 1) >> 1;
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res, rd);
-			regs.write(instr.rd(), res);
-			// TODO: OV
+			const auto res = (((rs1 * rs2[0]) >> 15) + 1) >> 1;
+			bool ov = false;
+			const auto res2 = sat_add<int32_t>(&ov, res, rd);
+			regs.write(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAWB2: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-
 			const auto sat_mul = rs1 == 0x8000'0000 || rs2[0] == 0x8000;
-			const auto res_mul = sat_mul ? 0x7FFF'FFFF : ((int64_t)rs1 * rs2[0]) >> 15;
-
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res_mul, rd);
+			const auto res_mul = sat_mul ? 0x7FFF'FFFF : (rs1 * rs2[0]) >> 15;
+			bool ov = false;
+			const auto res = sat_add<int32_t>(&ov, res_mul, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAWB2_u: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-
 			const auto sat_mul = rs1 == 0x8000'0000 || rs2[0] == 0x8000;
-			const auto res_mul = sat_mul ? 0x7FFF'FFFF : ((((int64_t)rs1 * rs2[0]) >> 14) + 1) >> 1;
-
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res_mul, rd);
+			const auto res_mul = sat_mul ? 0x7FFF'FFFF : (((rs1 * rs2[0]) >> 14) + 1) >> 1;
+			bool ov = false;
+			const auto res = sat_add<int32_t>(&ov, res_mul, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAWT: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-			const auto res = ((int64_t)rs1 * rs2[1]) >> 16;
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res, rd);
-			regs.write(instr.rd(), res);
-			// TODO: OV
+			const auto res = (rs1 * rs2[1]) >> 16;
+			bool ov = false;
+			const auto res2 = sat_add<int32_t>(&ov, res, rd);
+			regs.write(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAWT_u: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-			const auto res = ((((int64_t)rs1 * rs2[1]) >> 15) + 1) >> 1;
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res, rd);
-			regs.write(instr.rd(), res);
-			// TODO: OV
+			const auto res = (((rs1 * rs2[1]) >> 15) + 1) >> 1;
+			bool ov = false;
+			const auto res2 = sat_add<int32_t>(&ov, res, rd);
+			regs.write(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAWT2: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2[1] == 0x8000;
+			const auto sat_mul = (uint32_t)rs1 == 0x8000'0000 || rs2[1] == 0x8000;
 			const auto res_mul = sat_mul ? 0x7FFF'FFFF : ((int64_t)rs1 * rs2[1]) >> 15;
-
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res_mul, rd);
+			bool ov = false;
+			const auto res = sat_add<int32_t>(&ov, res_mul, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMAWT2_u: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-
 			const auto sat_mul = rs1 == 0x8000'0000 || rs2[1] == 0x8000;
-			const auto res_mul = sat_mul ? 0x7FFF'FFFF : ((((int64_t)rs1 * rs2[1]) >> 14) + 1) >> 1;
-
-			bool ov0 = false;
-			const auto res = sat_add<int32_t>(&ov0, res_mul, rd);
+			const auto res_mul = sat_mul ? 0x7FFF'FFFF : (((rs1 * rs2[1]) >> 14) + 1) >> 1;
+			bool ov = false;
+			const auto res = sat_add<int32_t>(&ov, res_mul, rd);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMSB: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-			const auto res = ((int64_t)rs1 * rs2) >> 32;
-			bool ov0 = false;
-			const auto res = sat_sub<int32_t>(&ov0, rd, res);
-			regs.write(instr.rd(), res);
-			// TODO: OV
+			const auto res = (rs1 * rs2) >> 32;
+			bool ov = false;
+			const auto res2 = sat_sub<int32_t>(&ov, rd, res);
+			regs.write(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMSB_u: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-			const auto res = ((((int64_t)rs1 * rs2) >> 31) + 1) >> 1;
-			bool ov0 = false;
-			const auto res = sat_sub<int32_t>(&ov0, rd, res);
-			regs.write(instr.rd(), res);
-			// TODO: OV
+			const auto res = (((rs1 * rs2) >> 31) + 1) >> 1;
+			bool ov = false;
+			const auto res2 = sat_sub<int32_t>(&ov, rd, res);
+			regs.write(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMWB2: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-			const auto rd = regs.read(instr.rd());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2[0] == 0x8000;
-			const auto res = sat_mul ? 0x7FFF'FFFF : ((int64_t)rs1 * rs2[0]) >> 15;
-
+			const auto ov = rs1 == 0x8000'0000 || rs2[0] == 0x8000;
+			const auto res = ov ? 0x7FFF'FFFF : (rs1 * rs2[0]) >> 15;
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMWB2_u: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-			const auto rd = regs.read(instr.rd());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2[0] == 0x8000;
-			const auto res = sat_mul ? 0x7FFF'FFFF : ((((int64_t)rs1 * rs2[0]) >> 14) + 1) >> 1;
-
+			const auto ov = rs1 == 0x8000'0000 || rs2[0] == 0x8000;
+			const auto res = ov ? 0x7FFF'FFFF : (((rs1 * rs2[0]) >> 14) + 1) >> 1;
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMWT2: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-			const auto rd = regs.read(instr.rd());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2[1] == 0x8000;
-			const auto res = sat_mul ? 0x7FFF'FFFF : ((int64_t)rs1 * rs2[1]) >> 15;
-
+			const auto ov = rs1 == 0x8000'0000 || rs2[1] == 0x8000;
+			const auto res = ov ? 0x7FFF'FFFF : (rs1 * rs2[1]) >> 15;
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMMWT2_u: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-			const auto rd = regs.read(instr.rd());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2[1] == 0x8000;
-			const auto res = sat_mul ? 0x7FFF'FFFF : ((((int64_t)rs1 * rs2[1]) >> 14) + 1) >> 1;
-
+			const auto ov = rs1 == 0x8000'0000 || rs2[1] == 0x8000;
+			const auto res = ov ? 0x7FFF'FFFF : (((rs1 * rs2[1]) >> 14) + 1) >> 1;
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMSDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto top2 = (int64_t)rs1[1] * rs2[1];
 			const auto btm2 = (int64_t)rs1[0] * rs2[0];
-
-			bool ov1 = false;
-			bool ov2 = false;
-
+			bool ov = false;
 			const auto res = sat_sub<int64_t, INT32_MIN, INT32_MAX>(
-			    &ov2, sat_sub<int64_t, INT32_MIN, INT32_MAX>(&ov1, rd, top2), btm2);
-
+			    &ov, sat_sub<int64_t, INT32_MIN, INT32_MAX>(&ov, rd, top2), btm2);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMSXDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read(instr.rd());
 			const auto top2 = (int64_t)rs1[1] * rs2[0];
 			const auto btm2 = (int64_t)rs1[0] * rs2[1];
-
-			bool ov1 = false;
-			bool ov2 = false;
-
+			bool ov = false;
 			const auto res = sat_sub<int64_t, INT32_MIN, INT32_MAX>(
-			    &ov2, sat_sub<int64_t, INT32_MIN, INT32_MAX>(&ov1, rd, top2), btm2);
-
+			    &ov, sat_sub<int64_t, INT32_MIN, INT32_MAX>(&ov, rd, top2), btm2);
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KMSR64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
 			const auto res = rs1 * rs2;
-			bool ov0 = false;
-			const auto res = sat_add<int64_t>(&ov0, res, rd);
-			regs.write64x1(instr.rd(), res);
-			// TODO: OV
+			bool ov = false;
+			const auto res2 = sat_add<int64_t>(&ov, res, rd);
+			regs.write64x1(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLLW: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x1F;
-			const auto res = (int64_t)rs1 << rs2;
+			const auto res = rs1 << rs2;
 			const auto ov = res > INT32_MAX;
 			const auto ov2 = res < INT32_MIN;
 			regs.write(instr.rd(), ov ? INT32_MAX : ov2 ? INT32_MIN : (int32_t)res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov || ov2;
 		} break;
 
 		case Opcode::KSLLIW: {
-			const auto rs1 = regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = instr.rs2();
-			const auto res = (int64_t)rs1 << rs2;
+			const auto res = rs1 << rs2;
 			const auto ov = res > INT32_MAX;
 			const auto ov2 = res < INT32_MIN;
 			regs.write(instr.rd(), ov ? INT32_MAX : ov2 ? INT32_MIN : (int32_t)res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov || ov2;
 		} break;
 
 		case Opcode::KSLL8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x7;
-			std::array<int32_t, 4> res;
-
+			std::array<int32_t, 4> res = {};
 			bool ov = false;
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				res[lane] = (uint16_t)rs1[lane] << rs2;
-
 				const auto ov1 = res[lane] > INT8_MAX;
 				res[lane] = ov1 ? INT8_MAX : res[lane];
-
 				ov |= ov1;
 			}
 			regs.write8x4(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLLI8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x7;
-			std::array<int32_t, 4> res;
-
+			std::array<int32_t, 4> res = {};
 			bool ov = false;
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				res[lane] = (uint16_t)rs1[lane] << rs2;
-
 				const auto ov1 = res[lane] > INT8_MAX;
 				res[lane] = ov1 ? INT8_MAX : res[lane];
-
 				ov |= ov1;
 			}
 			regs.write8x4(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLL16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0xF;
-			std::array<int32_t, 2> res;
-
+			std::array<int32_t, 2> res = {};
 			bool ov = false;
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				res[lane] = (uint32_t)rs1[lane] << rs2;
-
 				const auto ov1 = res[lane] > INT16_MAX;
 				res[lane] = ov1 ? INT8_MAX : res[lane];
-
 				ov |= ov1;
 			}
 			regs.write16x2(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLLI16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = instr.rs2() & 0xF;
-			std::array<int32_t, 2> res;
-
+			std::array<int32_t, 2> res = {};
 			bool ov = false;
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				res[lane] = (uint32_t)rs1[lane] << rs2;
-
 				const auto ov1 = res[lane] > INT16_MAX;
 				res[lane] = ov1 ? INT8_MAX : res[lane];
-
 				ov |= ov1;
 			}
 			regs.write16x2(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLRA8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = (regs.read(instr.rs2()) & 0xF) << (32 - 4) >> (32 - 4);
-
 			std::array<int32_t, 4> res = rs1;
-
 			bool ov = false;
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				if (rs2) {
 					res[lane] = rs2 > 0 ? rs1[lane] << rs2 : rs1[lane] >> -rs2;
-
 					const auto ov1 = res[lane] > INT8_MAX;
 					const auto ov2 = res[lane] < INT8_MIN;
 					res[lane] = ov1 ? INT8_MAX : ov2 ? INT8_MIN : res[lane];
@@ -2281,20 +2314,18 @@ void ISS::exec_step() {
 				}
 			}
 			regs.write8x4(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLRA8_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = (regs.read(instr.rs2()) & 0xF) << (32 - 4) >> (32 - 4);
-
 			std::array<int32_t, 4> res = rs1;
-
 			bool ov = false;
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				if (rs2) {
 					res[lane] = rs2 > 0 ? rs1[lane] << rs2 : ((rs1[lane] >> (-rs2 - 1)) + 1) >> 1;
-
 					const auto ov1 = res[lane] > INT8_MAX;
 					const auto ov2 = res[lane] < INT8_MIN;
 					res[lane] = ov1 ? INT8_MAX : ov2 ? INT8_MIN : res[lane];
@@ -2302,86 +2333,75 @@ void ISS::exec_step() {
 				}
 			}
 			regs.write8x4(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLRA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = (regs.read(instr.rs2()) & 0x1F) << (32 - 5) >> (32 - 5);
-
-			std::array<int32_t, 2> res;
-
+			std::array<int32_t, 2> res = {};
 			bool ov = false;
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				res[lane] = rs2 > 0 ? rs1[lane] << rs2 : rs1[lane] >> -rs2;
-
 				const auto ov1 = res[lane] > INT16_MAX;
 				const auto ov2 = res[lane] < INT16_MIN;
 				res[lane] = ov1 ? INT16_MAX : ov2 ? INT16_MIN : res[lane];
 				ov |= ov1 || ov2;
 			}
 			regs.write16x2(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLRA16_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = (regs.read(instr.rs2()) & 0x1F) << (32 - 5) >> (32 - 5);
-
-			std::array<int32_t, 2> res;
-
+			std::array<int32_t, 2> res = {};
 			bool ov = false;
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				res[lane] = rs2 > 0 ? rs1[lane] << rs2 : ((rs1[lane] >> (-rs2 - 1)) + 1) >> 1;
-
 				const auto ov1 = res[lane] > INT16_MAX;
 				const auto ov2 = res[lane] < INT16_MIN;
 				res[lane] = ov1 ? INT16_MAX : ov2 ? INT16_MIN : res[lane];
 				ov |= ov1 || ov2;
 			}
 			regs.write16x2(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLRAW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const int64_t rs1 = regs.read(instr.rs1());
 			const auto rs2 = (regs.read(instr.rs2()) & 0x3F) << (32 - 6) >> (32 - 6);
-
 			int64_t res = 0;
-
 			bool ov = false;
 			res = rs2 > 0 ? rs1 << rs2 : rs1 >> -rs2;
-
 			const auto ov1 = res > INT32_MAX;
 			const auto ov2 = res < INT32_MIN;
 			res = ov1 ? INT32_MAX : ov2 ? INT32_MIN : res;
-
 			ov |= ov1 || ov2;
-
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSLRAW_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const int64_t rs1 = regs.read(instr.rs1());
 			const auto rs2 = (regs.read(instr.rs2()) & 0x3F) << (32 - 6) >> (32 - 6);
-
 			int64_t res = 0;
-
 			bool ov = false;
 			res = rs2 > 0 ? rs1 << rs2 : ((rs1 >> (-rs2 - 1)) + 1) >> 1;
-
 			const auto ov1 = res > INT32_MAX;
 			const auto ov2 = res < INT32_MIN;
 			res = ov1 ? INT32_MAX : ov2 ? INT32_MIN : res;
-
 			ov |= ov1 || ov2;
-
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSTAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			bool ov = false;
@@ -2389,10 +2409,11 @@ void ISS::exec_step() {
 			                               sat_sub<int16_t>(&ov, rs1[0], rs2[0]),
 			                               sat_add<int16_t>(&ov, rs1[1], rs2[1]),
 			                           });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSTSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			bool ov = false;
@@ -2400,10 +2421,11 @@ void ISS::exec_step() {
 			                               sat_add<int16_t>(&ov, rs1[0], rs2[0]),
 			                               sat_sub<int16_t>(&ov, rs1[1], rs2[1]),
 			                           });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSUB8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			bool ov = false;
@@ -2413,10 +2435,11 @@ void ISS::exec_step() {
 			                              sat_sub<int8_t>(&ov, rs1[2], rs2[2]),
 			                              sat_sub<int8_t>(&ov, rs1[3], rs2[3]),
 			                          });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSUB16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			bool ov = false;
@@ -2424,454 +2447,419 @@ void ISS::exec_step() {
 			                               sat_sub<int16_t>(&ov, rs1[0], rs2[0]),
 			                               sat_sub<int16_t>(&ov, rs1[1], rs2[1]),
 			                           });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSUB64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
 			const auto rs2 = regs.read64x1(instr.rs2());
 			bool ov = false;
 			regs.write64x1(instr.rd(), sat_sub<int64_t>(&ov, rs1, rs2));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSUBH: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			bool ov = false;
 			regs.write(instr.rd(), sat_sub<int16_t>(&ov, rs1[0], rs2[0]));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KSUBW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			bool ov = false;
 			regs.write(instr.rd(), sat_sub<int32_t>(&ov, rs1, rs2));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KWMMUL: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2 == 0x8000'0000;
-			const auto res = sat_mul ? 0x7FFF'FFFF : ((int64_t)rs1 * rs2) >> 31;
-
+			const auto ov = (uint32_t)rs1 == 0x8000'0000 || (uint32_t)rs2 == 0x8000'0000;
+			const auto res = ov ? 0x7FFF'FFFF : ((int64_t)rs1 * rs2) >> 31;
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::KWMMUL_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2 == 0x8000'0000;
-			const auto res = sat_mul ? 0x7FFF'FFFF : ((((int64_t)rs1 * rs2) >> 30) + 1) >> 1;
-
+			const auto ov = (uint32_t)rs1 == 0x8000'0000 || (uint32_t)rs2 == 0x8000'0000;
+			const auto res = ov ? 0x7FFF'FFFF : ((((int64_t)rs1 * rs2) >> 30) + 1) >> 1;
 			regs.write(instr.rd(), res);
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::MADDR32: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read(instr.rd());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2 == 0x8000'0000;
 			const auto res = (int64_t)rs1 * rs2 + rd;
-
 			regs.write(instr.rd(), res);
 		} break;
 
 		case Opcode::MSUBR32: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
-			const auto rd = regs.read(instr.rd());
-
-			const auto sat_mul = rs1 == 0x8000'0000 || rs2 == 0x8000'0000;
-			const auto res = (int64_t)rd - (int64_t)rs1 * (int64_t)rs2;
-
+			const auto rd = (int64_t)regs.read(instr.rd());
+			const auto res = rd - (int64_t)rs1 * (int64_t)rs2;
 			regs.write(instr.rd(), res);
 		} break;
 
 		case Opcode::MULR64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.read(instr.rs1());
 			const auto rs2 = (uint64_t)regs.read(instr.rs2());
-
 			const auto res = rs1 * rs2;
-
 			regs.write64x1(instr.rd(), res);
 		} break;
 
 		case Opcode::MULSR64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = (int64_t)regs.read(instr.rs2());
-
 			const auto res = rs1 * rs2;
-
 			regs.write64x1(instr.rd(), res);
 		} break;
 
 		case Opcode::PBSAD: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
-
 			uint32_t sum = 0;
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				sum += std::abs((int32_t)rs1[lane] - (int32_t)rs2[lane]);
 			}
-
 			regs.write(instr.rd(), sum);
 		} break;
 
 		case Opcode::PBSADA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			auto sum = (uint32_t)regs.read(instr.rd());
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				sum += std::abs((int32_t)rs1[lane] - (int32_t)rs2[lane]);
 			}
-
 			regs.write(instr.rd(), sum);
 		} break;
 
-		case Opcode::PKBB16: {
-			const auto rs1 = regs.read16x2(instr.rs1());
-			const auto rs2 = regs.read16x2(instr.rs2());
-
-			regs.write16x2(instr.rd(), {rs2[0], rs1[0]});
-		}
-
 		case Opcode::PKBT16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write16x2(instr.rd(), {rs2[1], rs1[0]});
-		}
+		} break;
 
 		case Opcode::PKTB16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write16x2(instr.rd(), {rs2[0], rs1[1]});
-		}
-
-		case Opcode::PKTT16: {
-			const auto rs1 = regs.read16x2(instr.rs1());
-			const auto rs2 = regs.read16x2(instr.rs2());
-
-			regs.write16x2(instr.rd(), {rs2[1], rs1[1]});
-		}
+		} break;
 
 		case Opcode::RADD8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			auto rd = regs.read8x4(instr.rd());
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = ((int64_t)rs1[lane] + rs2[lane]) >> 1;
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::RADD16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			std::array<int32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = ((int64_t)rs1[lane] + rs2[lane]) >> 1;
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::RADD64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
 			const auto rs2 = regs.read64x1(instr.rs2());
 			const auto rd = (rs1 + rs2) >> 1;
-
 			regs.write64x1(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::RADDW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = (int64_t)regs.read(instr.rs2());
 			const auto rd = (rs1 + rs2) >> 1;
-
 			regs.write(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::RCRAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write16x2(instr.rd(), {rs1[0] - rs2[1], rs1[1] + rs2[0]});
-		}
+		} break;
 
 		case Opcode::RCRSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write16x2(instr.rd(), {rs1[0] + rs2[1], rs1[1] - rs2[0]});
-		}
-
-		case Opcode::RDOV: {
-			// TODO: OV
-		}
+		} break;
 
 		case Opcode::RSTAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write16x2(instr.rd(), {rs1[0] - rs2[0], rs1[1] + rs2[1]});
-		}
+		} break;
 
 		case Opcode::RSTSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write16x2(instr.rd(), {rs1[0] + rs2[0], rs1[1] - rs2[1]});
-		}
+		} break;
 
 		case Opcode::RSUB8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			auto rd = regs.read8x4(instr.rd());
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = ((int64_t)rs1[lane] - rs2[lane]) >> 1;
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::RSUB16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			std::array<int32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = ((int64_t)rs1[lane] - rs2[lane]) >> 1;
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::RSUB64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
 			const auto rs2 = regs.read64x1(instr.rs2());
 			const auto rd = (rs1 - rs2) >> 1;
-
 			regs.write64x1(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::RSUBW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
 			const auto rs2 = (int64_t)regs.read(instr.rs2());
 			const auto rd = (rs1 - rs2) >> 1;
-
 			regs.write(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SCLIP8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto imm = BIT_SLICE(instr.data(), 22, 20);
 			const auto max_val = (1 << imm) - 1;
 			const auto min_val = -(1 << imm);
-
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = std::min(std::max(max_val, rs1[lane]), min_val);
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SCLIP16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto imm = BIT_SLICE(instr.data(), 22, 20);
 			const auto max_val = (1 << imm) - 1;
 			const auto min_val = -(1 << imm);
-
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = std::min(std::max(max_val, rs1[lane]), min_val);
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SCLIP32: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto imm = BIT_SLICE(instr.data(), 24, 20);
 			const auto max_val = (1 << imm) - 1;
 			const auto min_val = -(1 << imm);
 			const auto rd = std::min(std::max(max_val, rs1), min_val);
 			regs.write(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SCMPLE8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			std::array<int32_t, 4> rd = {};
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] <= rs2[lane] ? 0xFF : 0;
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SCMPLE16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			std::array<int32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] <= rs2[lane] ? 0xFFFF : 0;
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SCMPLT8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			std::array<int32_t, 4> rd = {};
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] < rs2[lane] ? 0xFF : 0;
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SCMPLT16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			std::array<int32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] < rs2[lane] ? 0xFFFF : 0;
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SLL8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x7;
 			std::array<int32_t, 4> rd = {};
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] << rs2;
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SLLI8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x7;
 			std::array<int32_t, 4> rd = {};
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] << rs2;
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SLL16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0xF;
 			std::array<int32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] << rs2;
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SLLI16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = instr.rs2() & 0xF;
 			std::array<int32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] << rs2;
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SMAL: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			regs.write64x1(instr.rd(), rs1 + rs2[0] * rs2[1]);
-		}
+		} break;
 
 		case Opcode::SMALBB: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[0]);
-		}
+		} break;
 
 		case Opcode::SMALBT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[1]);
-		}
+		} break;
 
 		case Opcode::SMALDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd + rs1[1] * rs2[1] + rs1[0] * rs2[0]);
-		}
+		} break;
 
 		case Opcode::SMALXDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[1] + rs1[1] * rs2[0]);
-		}
+		} break;
 
 		case Opcode::SMALDS: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd + (rs1[1] * rs2[1] - rs1[0] * rs2[0]));
-		}
+		} break;
 
 		case Opcode::SMALDRS: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd + (rs1[0] * rs2[0] - rs1[1] * rs2[1]));
-		}
+		} break;
 
 		case Opcode::SMAR64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd + rs1 * rs2);
-		}
+		} break;
 
 		case Opcode::SMAQA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			const auto rd = regs.read(instr.rd());
@@ -2879,11 +2867,11 @@ void ISS::exec_step() {
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				sum += (int64_t)rs1[lane] * (int64_t)rs2[lane];
 			}
-
 			regs.write(instr.rd(), rd + sum);
-		}
+		} break;
 
 		case Opcode::SMAQA_SU: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			const auto rd = regs.read(instr.rd());
@@ -2891,152 +2879,148 @@ void ISS::exec_step() {
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				sum += (int64_t)rs1[lane] * (uint64_t)rs2[lane];
 			}
-
 			regs.write(instr.rd(), rd + sum);
-		}
+		} break;
 
 		case Opcode::SMAX8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
-
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = std::max(rs1[lane], rs2[lane]);
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SMAX16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = std::max(rs1[lane], rs2[lane]);
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SMDS: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write(instr.rd(), rs1[1] * rs2[1] - rs1[0] * rs2[0]);
-		}
+		} break;
 
 		case Opcode::SMDRS: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write(instr.rd(), rs1[0] * rs2[0] - rs1[1] * rs2[1]);
-		}
+		} break;
 
 		case Opcode::SMXDS: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write(instr.rd(), rs1[1] * rs2[0] - rs1[0] * rs2[1]);
-		}
+		} break;
 
 		case Opcode::SMIN8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
-
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = std::min(rs1[lane], rs2[lane]);
 			}
-
 			regs.write8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SMIN16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = std::min(rs1[lane], rs2[lane]);
 			}
-
 			regs.write16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::SMMUL: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = (int64_t)rs1 * rs2;
-
 			regs.write(instr.rd(), rd >> 32);
 		} break;
 
 		case Opcode::SMMUL_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = (int64_t)rs1 * rs2;
-
 			regs.write(instr.rd(), ((rd >> 31) + 1) >> 1);
 		} break;
 
 		case Opcode::SMMWB: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = (int64_t)rs1 * rs2[0];
-
 			regs.write(instr.rd(), rd >> 16);
 		} break;
 
 		case Opcode::SMMWB_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = (int64_t)rs1 * rs2[0];
-
 			regs.write(instr.rd(), ((rd >> 15) + 1) >> 1);
 		} break;
 
 		case Opcode::SMMWT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = (int64_t)rs1 * rs2[1];
-
 			regs.write(instr.rd(), rd >> 16);
 		} break;
 
 		case Opcode::SMMWT_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = (int64_t)rs1 * rs2[1];
-
 			regs.write(instr.rd(), ((rd >> 15) + 1) >> 1);
 		} break;
 
 		case Opcode::SMSLDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd - rs1[1] * rs2[1] - rs1[0] * rs2[0]);
-		}
+		} break;
 
 		case Opcode::SMSLXDA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd - rs1[0] * rs2[1] - rs1[1] * rs2[0]);
-		}
+		} break;
 
 		case Opcode::SMSR64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2());
 			const auto rd = regs.read64x1(instr.rd());
-
 			regs.write64x1(instr.rd(), rd - rs1 * rs2);
-		}
+		} break;
 
 		case Opcode::SMUL8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			regs.write8x4(instr.rd(), {
@@ -3048,6 +3032,7 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SMULX8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			regs.write8x4(instr.rd(), {
@@ -3059,6 +3044,7 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SMUL16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			regs.write16x2(instr.rd(), {
@@ -3068,6 +3054,7 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SMULX16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			regs.write16x2(instr.rd(), {
@@ -3077,9 +3064,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRA_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x1F;
-
 			if (rs2)
 				regs.write(instr.rd(), ((rs1 >> (rs1 - 1)) + 1) >> 1);
 			else
@@ -3087,9 +3074,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRAI_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x1F;
-
 			if (rs2)
 				regs.write(instr.rd(), ((rs1 >> (rs1 - 1)) + 1) >> 1);
 			else
@@ -3097,9 +3084,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRA8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x07;
-
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] >> rs2;
@@ -3108,9 +3095,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRA8_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x07;
-
 			std::array<int32_t, 4> rd = {};
 			if (rs2)
 				for (int32_t lane = 0; lane < 4; ++lane) {
@@ -3120,9 +3107,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRAI8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x07;
-
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] >> rs2;
@@ -3131,9 +3118,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRAI8_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x07;
-
 			std::array<int32_t, 4> rd = {};
 			if (rs2)
 				for (int32_t lane = 0; lane < 4; ++lane) {
@@ -3143,9 +3130,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x0F;
-
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] >> rs2;
@@ -3154,9 +3141,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRA16_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x0F;
-
 			std::array<int32_t, 2> rd = {};
 			if (rs2)
 				for (int32_t lane = 0; lane < 2; ++lane) {
@@ -3166,9 +3153,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRAI16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x0F;
-
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] >> rs2;
@@ -3177,9 +3164,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRAI16_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x0F;
-
 			std::array<int32_t, 2> rd = {};
 			if (rs2)
 				for (int32_t lane = 0; lane < 2; ++lane) {
@@ -3189,9 +3176,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRL8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x07;
-
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] >> rs2;
@@ -3200,9 +3187,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRL8_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x07;
-
 			std::array<int32_t, 4> rd = {};
 			if (rs2)
 				for (int32_t lane = 0; lane < 4; ++lane) {
@@ -3212,9 +3199,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRLI8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x07;
-
 			std::array<int32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] >> rs2;
@@ -3223,9 +3210,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRLI8_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x07;
-
 			std::array<int32_t, 4> rd = {};
 			if (rs2)
 				for (int32_t lane = 0; lane < 4; ++lane) {
@@ -3235,9 +3222,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRL16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x0F;
-
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] >> rs2;
@@ -3246,9 +3233,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRL16_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.read(instr.rs2()) & 0x0F;
-
 			std::array<int32_t, 2> rd = {};
 			if (rs2)
 				for (int32_t lane = 0; lane < 2; ++lane) {
@@ -3258,9 +3245,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRLI16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x0F;
-
 			std::array<int32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] >> rs2;
@@ -3269,9 +3256,9 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::SRLI16_u: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = instr.rs2() & 0x0F;
-
 			std::array<int32_t, 2> rd = {};
 			if (rs2)
 				for (int32_t lane = 0; lane < 2; ++lane) {
@@ -3281,173 +3268,174 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::STAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write16x2(instr.rd(), {rs1[0] + rs2[0], rs1[1] - rs2[1]});
 		} break;
 
 		case Opcode::STSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
-
 			regs.write16x2(instr.rd(), {rs1[0] - rs2[0], rs1[1] + rs2[1]});
 		} break;
 
 		case Opcode::SUB8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			const auto rs2 = regs.read8x4(instr.rs2());
 			auto rd = regs.read8x4(instr.rd());
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] - rs2[lane];
 			}
-
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
 		case Opcode::SUB16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			const auto rs2 = regs.read16x2(instr.rs2());
 			std::array<int32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] - rs2[lane];
 			}
-
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
 		case Opcode::SUB64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
 			const auto rs2 = regs.read64x1(instr.rs2());
 			const auto rd = rs1 - rs2;
-
 			regs.write64x1(instr.rd(), rd);
 		} break;
 
 		case Opcode::SUNPKD810: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[0], rs1[1]});
 		} break;
 
 		case Opcode::SUNPKD820: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[0], rs1[2]});
 		} break;
 
 		case Opcode::SUNPKD830: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[0], rs1[3]});
 		} break;
 
 		case Opcode::SUNPKD831: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[1], rs1[3]});
 		} break;
 
 		case Opcode::SUNPKD832: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[2], rs1[3]});
 		} break;
 
 		case Opcode::SWAP8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write8x4(instr.rd(), {rs1[3], rs1[2], rs1[1], rs1[0]});
 		} break;
 
 		case Opcode::SWAP16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[1], rs1[0]});
 		} break;
 
 		case Opcode::UCLIP8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto imm = (uint32_t)BIT_SLICE(instr.data(), 22, 20);
 			const auto max_val = (uint32_t)(1 << imm) - 1u;
 			const auto min_val = (uint32_t)0;
-
 			std::array<uint32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = std::min(std::max(max_val, rs1[lane]), min_val);
 			}
-
 			regs.uwrite8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UCLIP16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto imm = (uint32_t)BIT_SLICE(instr.data(), 22, 20);
 			const auto max_val = (uint32_t)(1 << imm) - 1u;
 			const auto min_val = (uint32_t)0;
-
 			std::array<uint32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = std::min(std::max(max_val, rs1[lane]), min_val);
 			}
-
 			regs.uwrite16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UCLIP32: {
-			const auto rs1 = (uint32_t)regs.read(instr.rs1());
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = regs.uread(instr.rs1());
 			const auto imm = (uint32_t)BIT_SLICE(instr.data(), 24, 20);
 			const auto max_val = (uint32_t)(1 << imm) - 1u;
 			const auto min_val = (uint32_t)0;
 			const auto rd = std::min(std::max(max_val, rs1), min_val);
 			regs.uwrite(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UCMPLE8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			std::array<uint32_t, 4> rd = {};
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] <= rs2[lane] ? 0xFF : 0;
 			}
-
 			regs.uwrite8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UCMPLE16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			std::array<uint32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] <= rs2[lane] ? 0xFFFF : 0;
 			}
-
 			regs.uwrite16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UCMPLT8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			std::array<uint32_t, 4> rd = {};
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = rs1[lane] < rs2[lane] ? 0xFF : 0;
 			}
-
 			regs.uwrite8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UCMPLT16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			std::array<uint32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = rs1[lane] < rs2[lane] ? 0xFFFF : 0;
 			}
-
 			regs.uwrite16x2(instr.rd(), rd);
-		}
+		} break;
 
 		// SIMD 8-bit Unsigned Saturating Addition
 		case Opcode::UKADD8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			bool ov = false;
@@ -3457,11 +3445,12 @@ void ISS::exec_step() {
 			                               sat_uadd<uint8_t>(&ov, rs1[2], rs2[2]),
 			                               sat_uadd<uint8_t>(&ov, rs1[3], rs2[3]),
 			                           });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// SIMD 16-bit Unsigned Saturating Addition
 		case Opcode::UKADD16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			bool ov = false;
@@ -3469,38 +3458,42 @@ void ISS::exec_step() {
 			                                sat_uadd<uint16_t>(&ov, rs1[0], rs2[0]),
 			                                sat_uadd<uint16_t>(&ov, rs1[1], rs2[1]),
 			                            });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// 64-bit Unsigned Saturating Addition
 		case Opcode::UKADD64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread64x1(instr.rs1());
 			const auto rs2 = regs.uread64x1(instr.rs2());
 			bool ov = false;
 			regs.uwrite64x1(instr.rd(), sat_uadd<uint64_t>(&ov, rs1, rs2));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// Unsigned Addition with Q15 Saturation
 		case Opcode::UKADDH: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			bool ov = false;
 			regs.uwrite(instr.rd(), sat_uadd<uint16_t>(&ov, rs1[0], rs2[0]));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// Unsigned Addition with Q31 Saturation
 		case Opcode::UKADDW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread(instr.rs1());
 			const auto rs2 = regs.uread(instr.rs2());
 			bool ov = false;
 			regs.uwrite(instr.rd(), sat_uadd<uint32_t>(&ov, rs1, rs2));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		// SIMD 16-bit Unsigned Saturating Cross Addition & Subtractions
 		case Opcode::UKCRAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			bool ov = false;
@@ -3508,10 +3501,11 @@ void ISS::exec_step() {
 			                                sat_usub<uint16_t>(&ov, rs1[0], rs2[1]),
 			                                sat_uadd<uint16_t>(&ov, rs1[1], rs2[0]),
 			                            });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKCRSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			bool ov = false;
@@ -3519,10 +3513,11 @@ void ISS::exec_step() {
 			                                sat_uadd<uint16_t>(&ov, rs1[0], rs2[1]),
 			                                sat_usub<uint16_t>(&ov, rs1[1], rs2[0]),
 			                            });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKSTAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			bool ov = false;
@@ -3530,10 +3525,11 @@ void ISS::exec_step() {
 			                                sat_usub<uint16_t>(&ov, rs1[0], rs2[0]),
 			                                sat_uadd<uint16_t>(&ov, rs1[1], rs2[1]),
 			                            });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKSTSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			bool ov = false;
@@ -3541,10 +3537,11 @@ void ISS::exec_step() {
 			                                sat_uadd<uint16_t>(&ov, rs1[0], rs2[0]),
 			                                sat_usub<uint16_t>(&ov, rs1[1], rs2[1]),
 			                            });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKSUB8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			bool ov = false;
@@ -3554,10 +3551,11 @@ void ISS::exec_step() {
 			                               sat_usub<uint8_t>(&ov, rs1[2], rs2[2]),
 			                               sat_usub<uint8_t>(&ov, rs1[3], rs2[3]),
 			                           });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKSUB16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			bool ov = false;
@@ -3565,56 +3563,62 @@ void ISS::exec_step() {
 			                                sat_usub<uint16_t>(&ov, rs1[0], rs2[0]),
 			                                sat_usub<uint16_t>(&ov, rs1[1], rs2[1]),
 			                            });
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKSUB64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.uread64x1(instr.rs1());
 			const auto rs2 = (uint64_t)regs.uread64x1(instr.rs2());
 			bool ov = false;
 			regs.uwrite64x1(instr.rd(), sat_usub<uint64_t>(&ov, rs1, rs2));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKSUBH: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			bool ov = false;
 			regs.uwrite(instr.rd(), sat_usub<uint16_t>(&ov, rs1[0], rs2[0]));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKSUBW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
 			const auto rs2 = (uint32_t)regs.uread(instr.rs2());
 			bool ov = false;
 			regs.uwrite(instr.rd(), sat_usub<uint32_t>(&ov, rs1, rs2));
-			// TODO: OV
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKMAR64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
 			const auto rs2 = (uint32_t)regs.uread(instr.rs2());
 			const auto rd = (uint64_t)regs.uread64x1(instr.rd());
 			const auto res = rs1 * rs2;
-			bool ov0 = false;
-			const auto res = sat_uadd<uint64_t>(&ov0, res, rd);
-			regs.uwrite64x1(instr.rd(), res);
-			// TODO: OV
+			bool ov = false;
+			const auto res2 = sat_uadd<uint64_t>(&ov, res, rd);
+			regs.uwrite64x1(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UKMSR64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
 			const auto rs2 = (uint32_t)regs.uread(instr.rs2());
 			const auto rd = (uint64_t)regs.uread64x1(instr.rd());
 			const auto res = rs1 * rs2;
-			bool ov0 = false;
-			const auto res = sat_uadd<uint64_t>(&ov0, res, rd);
-			regs.uwrite64x1(instr.rd(), res);
-			// TODO: OV
+			bool ov = false;
+			const auto res2 = sat_uadd<uint64_t>(&ov, res, rd);
+			regs.uwrite64x1(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
 		} break;
 
 		case Opcode::UMAQA: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			const auto rd = regs.uread(instr.rd());
@@ -3622,67 +3626,63 @@ void ISS::exec_step() {
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				sum += (uint64_t)rs1[lane] * (uint64_t)rs2[lane];
 			}
-
 			regs.uwrite(instr.rd(), rd + sum);
-		}
+		} break;
 
 		case Opcode::UMAX8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
-
 			std::array<uint32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = std::max(rs1[lane], rs2[lane]);
 			}
-
 			regs.uwrite8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UMAX16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
-
 			std::array<uint32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = std::max(rs1[lane], rs2[lane]);
 			}
-
 			regs.uwrite16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UMIN8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
-
 			std::array<uint32_t, 4> rd = {};
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = std::min(rs1[lane], rs2[lane]);
 			}
-
 			regs.uwrite8x4(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UMIN16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
-
 			std::array<uint32_t, 2> rd = {};
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = std::min(rs1[lane], rs2[lane]);
 			}
-
 			regs.uwrite16x2(instr.rd(), rd);
-		}
+		} break;
 
 		case Opcode::UMSR64: {
-			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
-			const auto rs2 = (uint32_t)regs.uread(instr.rs2());
-			const auto rd = (uint64_t)regs.uread64x1(instr.rd());
-
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = regs.uread(instr.rs1());
+			const auto rs2 = regs.uread(instr.rs2());
+			const auto rd = regs.uread64x1(instr.rd());
 			regs.uwrite64x1(instr.rd(), rd - rs1 * rs2);
-		}
+		} break;
 
 		case Opcode::UMUL8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			regs.uwrite8x4(instr.rd(), {
@@ -3694,6 +3694,7 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::UMULX8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			regs.uwrite8x4(instr.rd(), {
@@ -3705,6 +3706,7 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::UMUL16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			regs.uwrite16x2(instr.rd(), {
@@ -3714,6 +3716,7 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::UMULX16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			regs.uwrite16x2(instr.rd(), {
@@ -3723,22 +3726,21 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::URADD8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			auto rd = regs.uread8x4(instr.rd());
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = ((uint64_t)rs1[lane] + rs2[lane]) >> 1;
 			}
-
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
 		case Opcode::URADD16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			std::array<uint32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = ((uint64_t)rs1[lane] + rs2[lane]) >> 1;
 			}
@@ -3747,121 +3749,126 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::URADD64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.uread64x1(instr.rs1());
 			const auto rs2 = (uint64_t)regs.uread64x1(instr.rs2());
 			const auto rd = (rs1 + rs2) >> 1;
-
 			regs.uwrite64x1(instr.rd(), rd);
 		} break;
 
 		case Opcode::URADDW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.uread(instr.rs1());
 			const auto rs2 = (uint64_t)regs.uread(instr.rs2());
 			const auto rd = (rs1 + rs2) >> 1;
-
 			regs.uwrite(instr.rd(), rd);
 		} break;
 
 		case Opcode::URCRAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
-
 			regs.uwrite16x2(instr.rd(), {rs1[0] - rs2[1], rs1[1] + rs2[0]});
 		} break;
 
 		case Opcode::URCRSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
-
 			regs.uwrite16x2(instr.rd(), {rs1[0] + rs2[1], rs1[1] - rs2[0]});
 		} break;
 
 		case Opcode::URSTAS16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
-
 			regs.uwrite16x2(instr.rd(), {rs1[0] - rs2[0], rs1[1] + rs2[1]});
 		} break;
 
 		case Opcode::URSTSA16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
-
 			regs.uwrite16x2(instr.rd(), {rs1[0] + rs2[0], rs1[1] - rs2[1]});
 		} break;
 
 		case Opcode::URSUB8: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			const auto rs2 = regs.uread8x4(instr.rs2());
 			auto rd = regs.uread8x4(instr.rd());
-
 			for (int32_t lane = 0; lane < 4; ++lane) {
 				rd[lane] = ((uint64_t)rs1[lane] - rs2[lane]) >> 1;
 			}
-
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
 		case Opcode::URSUB16: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
 			const auto rs2 = regs.uread16x2(instr.rs2());
 			std::array<uint32_t, 2> rd = {};
-
 			for (int32_t lane = 0; lane < 2; ++lane) {
 				rd[lane] = ((uint64_t)rs1[lane] - rs2[lane]) >> 1;
 			}
-
 			regs.uwrite16x2(instr.rd(), rd);
 		} break;
 
 		case Opcode::URSUB64: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread64x1(instr.rs1());
 			const auto rs2 = regs.uread64x1(instr.rs2());
 			const auto rd = (rs1 - rs2) >> 1;
-
 			regs.uwrite64x1(instr.rd(), rd);
 		} break;
 
 		case Opcode::URSUBW: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.uread(instr.rs1());
 			const auto rs2 = (uint64_t)regs.uread(instr.rs2());
 			const auto rd = (rs1 - rs2) >> 1;
-
 			regs.uwrite(instr.rd(), rd);
 		} break;
 
 		case Opcode::WEXTI: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread64x1(instr.rs1());
 			regs.uwrite(instr.rd(), rs1 >> instr.rs2());
 		} break;
 
 		case Opcode::WEXT: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread64x1(instr.rs1());
 			const auto rs2 = regs.uread(instr.rs2()) & 0x1F;
 			regs.uwrite(instr.rd(), rs1 >> rs2);
 		} break;
 
 		case Opcode::ZUNPKD810: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[0], rs1[1]});
 		} break;
 
 		case Opcode::ZUNPKD820: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[0], rs1[2]});
 		} break;
 
 		case Opcode::ZUNPKD830: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[0], rs1[3]});
 		} break;
 
 		case Opcode::ZUNPKD831: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[1], rs1[3]});
 		} break;
 
 		case Opcode::ZUNPKD832: {
+			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[2], rs1[3]});
 		} break;

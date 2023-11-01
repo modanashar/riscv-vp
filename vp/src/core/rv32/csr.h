@@ -68,12 +68,13 @@ struct csr_misa {
 		I = 1 << 8,
 		M = 1 << 12,
 		N = 1 << 13,
+		P = 1 << 15,
 		S = 1 << 18,
 		U = 1 << 20,
 	};
 
 	void init() {
-		fields.extensions = I | M | A | F | C | N | U | S;  // IMACF + NUS
+		fields.extensions = I | M | A | F | C | N | U | S | P;  // IMACF + NUS + P
 		fields.wiri = 0;
 		fields.mxl = 1;  // RV32
 	}
@@ -84,6 +85,7 @@ constexpr unsigned A_ISA_EXT = csr_misa::A;
 constexpr unsigned F_ISA_EXT = csr_misa::F;
 constexpr unsigned D_ISA_EXT = csr_misa::D;
 constexpr unsigned C_ISA_EXT = csr_misa::C;
+constexpr unsigned P_ISA_EXT = csr_misa::P;
 
 struct csr_mvendorid {
 	union {
@@ -431,6 +433,9 @@ constexpr unsigned FFLAGS_ADDR = 0x001;
 constexpr unsigned FRM_ADDR = 0x002;
 constexpr unsigned FCSR_ADDR = 0x003;
 
+// P-Extension CSRs
+constexpr unsigned VXSAT_ADDR = 0x009;
+
 // performance counters
 constexpr unsigned HPMCOUNTER3_ADDR = 0xC03;
 constexpr unsigned HPMCOUNTER4_ADDR = 0xC04;
@@ -633,6 +638,8 @@ struct csr_table {
 
 	csr_fcsr fcsr;
 
+	csr_32 vxsat;
+
 	std::unordered_map<unsigned, uint32_t *> register_mapping;
 
 	csr_table() {
@@ -670,6 +677,8 @@ struct csr_table {
 		register_mapping[MCAUSE_ADDR] = &mcause.reg;
 		register_mapping[MTVAL_ADDR] = &mtval.reg;
 		register_mapping[MIP_ADDR] = &mip.reg;
+
+		register_mapping[VXSAT_ADDR] = &vxsat.reg;
 
 		for (unsigned i = 0; i < 16; ++i) register_mapping[PMPADDR0_ADDR + i] = &pmpaddr[i].reg;
 

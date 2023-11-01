@@ -739,10 +739,8 @@ std::array<const char *, Opcode::NUMBER_OF_INSTRUCTIONS> Opcode::mappingStr = {
     "ZUNPKD832",
 
     // P standard extension :: 16-bit Packing Instructions
-    "PKBB16",
     "PKBT16",
     "PKTB16",
-    "PKTT16",
 
     // P standard extension :: Most Significant Word “32x32” Multiply & Add Instructions
     "SMMUL",
@@ -1160,10 +1158,8 @@ Opcode::Type Opcode::getType(Opcode::Mapping mapping) {
 		case ZUNPKD832:
 
 		// P standard extension :: 16-bit Packing Instructions
-		case PKBB16:
 		case PKBT16:
 		case PKTB16:
-		case PKTT16:
 
 		// P standard extension :: Most Significant Word “32x32” Multiply & Add Instructions
 		case SMMUL:
@@ -2500,12 +2496,514 @@ Opcode::Mapping Instruction::decode_normal(Architecture arch) {
 		// RV32/64 P-Extension
 		case OP_P:
 			switch (instr.funct3()) {
-				case 0:
+				case 0b000:
 					switch (instr.funct7()) {
 						case F7_ADD8:
 							return ADD8;
 						case F7_ADD16:
 							return ADD16;
+						case F7_ADD64:
+							return ADD64;
+						case F7_AVE:
+							return AVE;
+						case F7_BITREV:
+							return BITREV;
+						case F7_BITREVI:
+							return BITREVI;
+							// TODO: CLROV
+						case F7_ONE_OP2:
+							switch (instr.rs2()) {
+								case SUBF5_CLRS8:
+									return CLRS8;
+								case SUBF5_CLRS16:
+									return CLRS16;
+								case SUBF5_CLRS32:
+									return CLRS32;
+								case SUBF5_CLZ8:
+									return CLZ8;
+								case SUBF5_CLZ16:
+									return CLZ16;
+								case SUBF5_CLZ32:
+									return CLZ32;
+							}
+							break;
+						case F7_CMPEQ8:
+							return CMPEQ8;
+						case F7_CMPEQ16:
+							return CMPEQ16;
+						case F7_CRAS16:
+							return CRAS16;
+						case F7_CRSA16:
+							return CRSA16;
+						case F7_ONE_OP:
+							switch (instr.rs2()) {
+								case SUBF5_INSB0:
+								case SUBF5_INSB1:
+								case SUBF5_INSB2:
+								case SUBF5_INSB3:
+									return INSB;
+								case SUBF5_KABS8:
+									return KABS8;
+								case SUBF5_KABS16:
+									return KABS16;
+								case SUBF5_KABSW:
+									return KABSW;
+								case SUBF5_SUNPKD810:
+									return SUNPKD810;
+								case SUBF5_SUNPKD820:
+									return SUNPKD820;
+								case SUBF5_SUNPKD830:
+									return SUNPKD830;
+								case SUBF5_SUNPKD831:
+									return SUNPKD831;
+								case SUBF5_SUNPKD832:
+									return SUNPKD832;
+								case SUBF5_SWAP8:
+									return SWAP8;
+								case SUBF5_ZUNPKD810:
+									return ZUNPKD810;
+								case SUBF5_ZUNPKD820:
+									return ZUNPKD820;
+								case SUBF5_ZUNPKD830:
+									return ZUNPKD830;
+								case SUBF5_ZUNPKD831:
+									return ZUNPKD831;
+								case SUBF5_ZUNPKD832:
+									return ZUNPKD832;
+							}
+							break;
+						case F7_KADD8:
+							return KADD8;
+						case F7_KADD16:
+							return KADD16;
+						case F7_KCRAS16:
+							return KCRAS16;
+						case F7_KCRSA16:
+							return KCRSA16;
+						case F7_KHM8:
+							return KHM8;
+						case F7_KHMX8:
+							return KHMX8;
+						case F7_KHM16:
+							return KHM16;
+						case F7_KHMX16:
+							return KHMX16;
+						case F7_KSLL8:
+							return KSLL8;
+						case F7_KSLLI8:
+							if (instr.rs2() >> 3 == 0b01)
+								return KSLLI8;
+							else
+								return SLLI8;
+						case F7_KSLL16:
+							return KSLL16;
+						case F7_KSLLI16:
+							if (instr.rs2() >> 4 == 0b1)
+								return KSLLI16;
+							else
+								return SLLI16;
+						case F7_KSLRA8:
+							return KSLRA8;
+						case F7_KSLRA8_u:
+							return KSLRA8_u;
+						case F7_KSLRA16:
+							return KSLRA16;
+						case F7_KSLRA16_U:
+							return KSLRA16_u;
+						case F7_KSUB8:
+							return KSUB8;
+						case F7_KSUB16:
+							return KSUB16;
+						case F7_PBSAD:
+							return PBSAD;
+						case F7_PBSADA:
+							return PBSADA;
+						case F7_RADD8:
+							return RADD8;
+						case F7_RADD16:
+							return RADD16;
+						case F7_RCRAS16:
+							return RCRAS16;
+						case F7_RCRSA16:
+							return RCRSA16;
+						case F7_RSUB8:
+							return RSUB8;
+						case F7_RSUB16:
+							return RSUB16;
+						case F7_SCLIP8:
+							if (instr.rs2() >> 3 == 0b10)
+								return UCLIP8;
+							else
+								return SCLIP8;
+						case F7_SCLIP16:
+							if (instr.rs2() >> 4 == 0b1)
+								return UCLIP16;
+							else
+								return SCLIP16;
+						case F7_SCLIP32:
+							return SCLIP32;
+						case F7_SCMPLE8:
+							return SCMPLE8;
+						case F7_SCMPLE16:
+							return SCMPLE16;
+						case F7_SCMPLT8:
+							return SCMPLT8;
+						case F7_SCMPLT16:
+							return SCMPLT16;
+						case F7_SLL8:
+							return SLL8;
+						case F7_SLL16:
+							return SLL16;
+						case F7_SMAQA:
+							return SMAQA;
+						case F7_SMAQA_SU:
+							return SMAQA_SU;
+						case F7_SMAX8:
+							return SMAX8;
+						case F7_SMAX16:
+							return SMAX16;
+						case F7_SMIN8:
+							return SMIN8;
+						case F7_SMIN16:
+							return SMIN16;
+						case F7_SMUL8:
+							return SMUL8;
+						case F7_SMULX8:
+							return SMULX8;
+						case F7_SMUL16:
+							return SMUL16;
+						case F7_SMULX16:
+							return SMULX16;
+						case F7_SRA8:
+							return SRA8;
+						case F7_SRA8_u:
+							return SRA8_u;
+						case F7_SRAI8:
+							if (instr.rs2() >> 3 == 0b00)
+								return SRAI8;
+							else
+								return SRAI8_u;
+						case F7_SRA16:
+							return SRA16;
+						case F7_SRA16_u:
+							return SRA16_u;
+						case F7_SRAI16:
+							if (instr.rs2() >> 4 == 0b0)
+								return SRAI16;
+							else
+								return SRAI16_u;
+						case F7_SRL8:
+							return SRL8;
+						case F7_SRL8_u:
+							return SRL8_u;
+						case F7_SRLI8:
+							if (instr.rs2() >> 3 == 0b00)
+								return SRLI8;
+							else
+								return SRLI8_u;
+						case F7_SRL16:
+							return SRL16;
+						case F7_SRL16_u:
+							return SRL16_u;
+						case F7_SRLI16:
+							if (instr.rs2() >> 4 == 0b0)
+								return SRLI16;
+							else
+								return SRLI16_u;
+						case F7_SUB8:
+							return SUB8;
+						case F7_SUB16:
+							return SUB16;
+						case F7_UCLIP32:
+							return UCLIP32;
+						case F7_UCMPLE8:
+							return UCMPLE8;
+						case F7_UCMPLE16:
+							return UCMPLE16;
+						case F7_UCMPLT8:
+							return UCMPLT8;
+						case F7_UCMPLT16:
+							return UCMPLT16;
+						case F7_UKADD8:
+							return UKADD8;
+						case F7_UKADD16:
+							return UKADD16;
+						case F7_UKCRAS16:
+							return UKCRAS16;
+						case F7_UKCRSA16:
+							return UKCRSA16;
+						case F7_UKSUB8:
+							return UKSUB8;
+						case F7_UKSUB16:
+							return UKSUB16;
+						case F7_UMAQA:
+							return UMAQA;
+						case F7_UMAX8:
+							return UMAX8;
+						case F7_UMAX16:
+							return UMAX16;
+						case F7_UMIN8:
+							return UMIN8;
+						case F7_UMIN16:
+							return UMIN16;
+						case F7_UMUL8:
+							return UMUL8;
+						case F7_UMULX8:
+							return UMULX8;
+						case F7_UMUL16:
+							return UMUL16;
+						case F7_UMULX16:
+							return UMULX16;
+						case F7_URADD8:
+							return URADD8;
+						case F7_URADD16:
+							return URADD16;
+						case F7_URCRAS16:
+							return URCRAS16;
+						case F7_URCRSA16:
+							return URCRSA16;
+						case F7_URSUB8:
+							return URSUB8;
+						case F7_URSUB16:
+							return URSUB16;
+						case F7_WEXTI:
+							return WEXTI;
+						case F7_WEXT:
+							return WEXT;
+					}
+					break;
+				case 0b001:
+					switch (instr.funct7()) {
+						case F7_KADD64:
+							return KADD64;
+						case F7_KADDH:
+							return KADDH;
+						case F7_KADDW:
+							return KADDW;
+						case F7_KDMBB:
+							return KDMBB;
+						case F7_KDMBT:
+							return KDMBT;
+						case F7_KDMTT:
+							return KDMTT;
+						case F7_KDMABB:
+							return KDMABB;
+						case F7_KDMABT:
+							return KDMABT;
+						case F7_KDMATT:
+							return KDMATT;
+						case F7_KHMBB:
+							return KHMBB;
+						case F7_KHMBT:
+							return KHMBT;
+						case F7_KHMTT:
+							return KHMTT;
+						case F7_KMABB:
+							return KMABB;
+						case F7_KMABT:
+							return KMABT;
+						case F7_KMATT:
+							return KMATT;
+						case F7_KMADA:
+							return KMADA;
+						case F7_KMAXDA:
+							return KMAXDA;
+						case F7_KMADS:
+							return KMADS;
+						case F7_KMADRS:
+							return KMADRS;
+						case F7_KMAXDS:
+							return KMAXDS;
+						case F7_KMAR64:
+							return KMAR64;
+						case F7_KMDA:
+							return KMDA;
+						case F7_KMXDA:
+							return KMXDA;
+						case F7_KMMAC:
+							return KMMAC;
+						case F7_KMMAC_U:
+							return KMMAC_u;
+						case F7_KMMAWB:
+							return KMMAWB;
+						case F7_KMMAWB_U:
+							return KMMAWB_u;
+						case F7_KMMAWB2:
+							return KMMAWB2;
+						case F7_KMMAWB2_U:
+							return KMMAWB2_u;
+						case F7_KMMAWT:
+							return KMMAWT;
+						case F7_KMMAWT_U:
+							return KMMAWT_u;
+						case F7_KMMAWT2:
+							return KMMAWT2;
+						case F7_KMMAWT2_U:
+							return KMMAWT2_u;
+						case F7_KMMSB:
+							return KMMSB;
+						case F7_KMMSB_U:
+							return KMMSB_u;
+						case F7_KMMWB2:
+							return KMMWB2;
+						case F7_KMMWB2_U:
+							return KMMWB2_u;
+						case F7_KMMWT2:
+							return KMMWT2;
+						case F7_KMMWT2_U:
+							return KMMWT2_u;
+						case F7_KMSDA:
+							return KMSDA;
+						case F7_KMSXDA:
+							return KMSXDA;
+						case F7_KMSR64:
+							return KMSR64;
+						case F7_KSLLW:
+							return KSLLW;
+						case F7_KSLLIW:
+							return KSLLIW;
+						case F7_KSLRAW:
+							return KSLRAW;
+						case F7_KSLRAW_U:
+							return KSLRAW_u;
+						case F7_KSUB64:
+							return KSUB64;
+						case F7_KSUBH:
+							return KSUBH;
+						case F7_KSUBW:
+							return KSUBW;
+						case F7_KWMMUL:
+							return KWMMUL;
+						case F7_KWMMUL_U:
+							return KWMMUL_u;
+						case F7_MADDR32:
+							return MADDR32;
+						case F7_MSUBR32:
+							return MSUBR32;
+						case F7_MULR64:
+							return MULR64;
+						case F7_MULSR64:
+							return MULSR64;
+						case F7_PKBT16:
+							return PKBT16;
+						case F7_PKTB16:
+							return PKTB16;
+						case F7_RADD64:
+							return RADD64;
+						case F7_RADDW:
+							return RADDW;
+						case F7_RSUB64:
+							return RSUB64;
+						case F7_RSUBW:
+							return RSUBW;
+						case F7_SMAL:
+							return SMAL;
+						case F7_SMALBB:
+							return SMALBB;
+						case F7_SMALBT:
+							return SMALBT;
+						case F7_SMALTT:
+							return SMALTT;
+						case F7_SMALDA:
+							return SMALDA;
+						case F7_SMALXDA:
+							return SMALXDA;
+						case F7_SMALDS:
+							return SMALDS;
+						case F7_SMALDRS:
+							return SMALDRS;
+						case F7_SMALXDS:
+							return SMALXDS;
+						case F7_SMAR64:
+							return SMAR64;
+						case F7_SMBB16:
+							return SMBB16;
+						case F7_SMBT16:
+							return SMBT16;
+						case F7_SMTT16:
+							return SMTT16;
+						case F7_SMDS:
+							return SMDS;
+						case F7_SMDRS:
+							return SMDRS;
+						case F7_SMXDS:
+							return SMXDS;
+						case F7_SMMUL:
+							return SMMUL;
+						case F7_SMMUL_U:
+							return SMMUL_u;
+						case F7_SMMWB:
+							return SMMWB;
+						case F7_SMMWB_U:
+							return SMMWB_u;
+						case F7_SMMWT:
+							return SMMWT;
+						case F7_SMMWT_U:
+							return SMMWT_u;
+						case F7_SMSLDA:
+							return SMSLDA;
+						case F7_SMSLXDA:
+							return SMSLXDA;
+						case F7_SMSR64:
+							return SMSR64;
+						case F7_SRA_U:
+							return SRA_u;
+						case F7_SRAI_U:
+							return SRAI_u;
+						case F7_SUB64:
+							return SUB64;
+						case F7_UKADD64:
+							return UKADD64;
+						case F7_UKADDH:
+							return UKADDH;
+						case F7_UKADDW:
+							return UKADDW;
+						case F7_UKMAR64:
+							return UKMAR64;
+						case F7_UKMSR64:
+							return UKMSR64;
+						case F7_UKSUB64:
+							return UKSUB64;
+						case F7_UKSUBH:
+							return UKSUBH;
+						case F7_UKSUBW:
+							return UKSUBW;
+						case F7_UMAR64:
+							return UMAR64;
+						case F7_UMSR64:
+							return UMSR64;
+						case F7_URADD64:
+							return URADD64;
+						case F7_URADDW:
+							return URADDW;
+						case F7_URSUB64:
+							return URSUB64;
+						case F7_URSUBW:
+							return URSUBW;
+					}
+					break;
+				case 0b010:
+					switch (instr.funct7()) {
+						case F7_KSTAS16:
+							return KSTAS16;
+						case F7_KSTSA16:
+							return KSTSA16;
+						case F7_RSTAS16:
+							return RSTAS16;
+						case F7_RSTSA16:
+							return RSTSA16;
+						case F7_STAS16:
+							return STAS16;
+						case F7_STSA16:
+							return STSA16;
+						case F7_UKSTAS16:
+							return UKSTAS16;
+						case F7_UKSTSA16:
+							return UKSTSA16;
+						case F7_URSTAS16:
+							return URSTAS16;
+						case F7_URSTSA16:
+							return URSTSA16;
 					}
 					break;
 			}
