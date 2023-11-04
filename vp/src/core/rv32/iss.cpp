@@ -1906,6 +1906,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Multiply Two Halfs & Subtract & Add
 		case Opcode::KMADS: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -1920,6 +1921,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Multiply Two Halfs & Reverse Subtract & Add
 		case Opcode::KMADRS: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -1934,6 +1936,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Crossed Multiply Two Halfs & Subtract & Add
 		case Opcode::KMAXDS: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -1948,6 +1951,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Multiply and Saturating Add to 64-Bit Data
 		case Opcode::KMAR64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -1960,6 +1964,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Signed Multiply Two Halfs and Add
 		case Opcode::KMDA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -1972,6 +1977,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Signed Crossed Multiply Two Halfs and Add
 		case Opcode::KMXDA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -1984,6 +1990,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Add
 		case Opcode::KMMAC: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -1996,6 +2003,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Add with Rounding
 		case Opcode::KMMAC_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2008,6 +2016,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Bottom Half and Add
 		case Opcode::KMMAWB: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2020,6 +2029,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Bottom Half and Add with Rounding
 		case Opcode::KMMAWB_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2032,6 +2042,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Bottom Half & 2 and Add
 		case Opcode::KMMAWB2: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2045,6 +2056,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Bottom Half & 2 and Add with Rounding
 		case Opcode::KMMAWB2_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2058,6 +2070,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Top Half and Add
 		case Opcode::KMMAWT: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2070,6 +2083,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Top Half and Add with Rounding
 		case Opcode::KMMAWT_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2082,6 +2096,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Top Half & 2 and Add
 		case Opcode::KMMAWT2: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2095,6 +2110,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Top Half & 2 and Add with Rounding
 		case Opcode::KMMAWT2_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2108,6 +2124,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Subtract
 		case Opcode::KMMSB: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2120,6 +2137,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Subtraction with Rounding
 		case Opcode::KMMSB_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2132,6 +2150,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Bottom Half & 2
 		case Opcode::KMMWB2: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2142,6 +2161,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Bottom Half & 2 with Rounding
 		case Opcode::KMMWB2_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2152,6 +2172,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Top Half & 2
 		case Opcode::KMMWT2: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2162,6 +2183,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word and Top Half & 2 with Rounding
 		case Opcode::KMMWT2_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2172,6 +2194,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Multiply Two Halfs & Add & Subtract
 		case Opcode::KMSDA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2186,6 +2209,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating Signed Crossed Multiply Two Halfs & Add & Subtract
 		case Opcode::KMSXDA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2200,6 +2224,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Multiply and Saturating Subtract from 64-Bit Data
 		case Opcode::KMSR64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2212,6 +2237,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Saturating Shift Left Logical for Word
 		case Opcode::KSLLW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2223,6 +2249,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov || ov2;
 		} break;
 
+		// Saturating Shift Left Logical Immediate for Word
 		case Opcode::KSLLIW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2234,6 +2261,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov || ov2;
 		} break;
 
+		// SIMD 8-bit Saturating Shift Left Logical
 		case Opcode::KSLL8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2250,6 +2278,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 8-bit Saturating Shift Left Logical Immediate
 		case Opcode::KSLLI8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2266,6 +2295,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Saturating Shift Left Logical
 		case Opcode::KSLL16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2282,6 +2312,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Saturating Shift Left Logical Immediate
 		case Opcode::KSLLI16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2298,6 +2329,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 8-bit Shift Left Logical with Saturation or Shift Right Arithmetic
 		case Opcode::KSLRA8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2317,6 +2349,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 8-bit Shift Left Logical with Saturation or Rounding Shift Right Arithmetic
 		case Opcode::KSLRA8_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2336,6 +2369,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Shift Left Logical with Saturation or Shift Right Arithmetic
 		case Opcode::KSLRA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2353,6 +2387,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Shift Left Logical with Saturation or Rounding Shift Right Arithmetic
 		case Opcode::KSLRA16_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2370,6 +2405,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Shift Left Logical with Q31 Saturation or Shift Right Arithmetic
 		case Opcode::KSLRAW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const int64_t rs1 = regs.read(instr.rs1());
@@ -2385,6 +2421,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Shift Left Logical with Q31 Saturation or Rounding Shift Right Arithmetic
 		case Opcode::KSLRAW_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const int64_t rs1 = regs.read(instr.rs1());
@@ -2400,6 +2437,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Signed Saturating Straight Addition & Subtraction
 		case Opcode::KSTAS16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2412,6 +2450,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Signed Saturating Straight Subtraction & Addition
 		case Opcode::KSTSA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2424,6 +2463,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 8-bit Signed Saturating Subtraction
 		case Opcode::KSUB8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2438,6 +2478,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Signed Saturating Subtraction
 		case Opcode::KSUB16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2450,6 +2491,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// 64-bit Signed Saturating Subtraction
 		case Opcode::KSUB64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
@@ -2459,6 +2501,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Subtraction with Q15 Saturation
 		case Opcode::KSUBH: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2468,6 +2511,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Signed Subtraction with Q31 Saturation
 		case Opcode::KSUBW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2477,6 +2521,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word & Double
 		case Opcode::KWMMUL: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2487,6 +2532,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD Saturating MSW Signed Multiply Word & Double with Rounding
 		case Opcode::KWMMUL_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2497,6 +2543,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Multiply and Add to 32-Bit Word
 		case Opcode::MADDR32: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2506,6 +2553,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), res);
 		} break;
 
+		// Multiply and Subtract from 32-Bit Word
 		case Opcode::MSUBR32: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2515,6 +2563,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), res);
 		} break;
 
+		// Multiply Word Unsigned to 64-bit Data
 		case Opcode::MULR64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.read(instr.rs1());
@@ -2523,6 +2572,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), res);
 		} break;
 
+		// Multiply Word Signed to 64-bit Data
 		case Opcode::MULSR64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2531,6 +2581,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), res);
 		} break;
 
+		// Parallel Byte Sum of Absolute Difference
 		case Opcode::PBSAD: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -2542,6 +2593,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), sum);
 		} break;
 
+		// Parallel Byte Sum of Absolute Difference Accum
 		case Opcode::PBSADA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -2553,6 +2605,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), sum);
 		} break;
 
+		// Pack Two 16-bit Data from Bottom and Top Half
 		case Opcode::PKBT16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2560,6 +2613,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), {rs2[1], rs1[0]});
 		} break;
 
+		// Pack Two 16-bit Data from Top and Bottom Half
 		case Opcode::PKTB16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2567,6 +2621,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), {rs2[0], rs1[1]});
 		} break;
 
+		// SIMD 8-bit Signed Halving Addition
 		case Opcode::RADD8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2578,6 +2633,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Signed Halving Addition
 		case Opcode::RADD16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2589,6 +2645,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// 64-bit Signed Halving Addition
 		case Opcode::RADD64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
@@ -2597,6 +2654,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd);
 		} break;
 
+		// 32-bit Signed Halving Addition
 		case Opcode::RADDW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2605,6 +2663,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Signed Halving Cross Addition & Subtraction
 		case Opcode::RCRAS16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2612,6 +2671,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), {rs1[0] - rs2[1], rs1[1] + rs2[0]});
 		} break;
 
+		// SIMD 16-bit Signed Halving Cross Subtraction & Addition
 		case Opcode::RCRSA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2619,6 +2679,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), {rs1[0] + rs2[1], rs1[1] - rs2[0]});
 		} break;
 
+		// SIMD 16-bit Signed Halving Straight Addition & Subtraction
 		case Opcode::RSTAS16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2626,6 +2687,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), {rs1[0] - rs2[0], rs1[1] + rs2[1]});
 		} break;
 
+		// SIMD 16-bit Signed Halving Straight Subtraction & Addition
 		case Opcode::RSTSA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2633,6 +2695,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), {rs1[0] + rs2[0], rs1[1] - rs2[1]});
 		} break;
 
+		// SIMD 8-bit Signed Halving Subtraction
 		case Opcode::RSUB8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2644,6 +2707,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Signed Halving Subtraction
 		case Opcode::RSUB16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2655,6 +2719,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// 64-bit Signed Halving Subtraction
 		case Opcode::RSUB64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
@@ -2663,6 +2728,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd);
 		} break;
 
+		// 32-bit Signed Halving Subtraction
 		case Opcode::RSUBW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (int64_t)regs.read(instr.rs1());
@@ -2671,6 +2737,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Signed Clip Value
 		case Opcode::SCLIP8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2684,6 +2751,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Signed Clip Value
 		case Opcode::SCLIP16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2697,6 +2765,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 32-bit Signed Clip Value
 		case Opcode::SCLIP32: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2707,6 +2776,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Signed Compare Less Than & Equal
 		case Opcode::SCMPLE8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2718,6 +2788,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Signed Compare Less Than & Equal
 		case Opcode::SCMPLE16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2729,6 +2800,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Signed Compare Less Than
 		case Opcode::SCMPLT8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2740,6 +2812,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Signed Compare Less Than
 		case Opcode::SCMPLT16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2751,6 +2824,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Shift Left Logical
 		case Opcode::SLL8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2762,6 +2836,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Shift Left Logical Immediate
 		case Opcode::SLLI8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2773,6 +2848,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Shift Left Logical
 		case Opcode::SLL16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2784,6 +2860,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Shift Left Logical Immediate
 		case Opcode::SLLI16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2795,6 +2872,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// Signed Multiply Halfs & Add 64-bit
 		case Opcode::SMAL: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
@@ -2802,6 +2880,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rs1 + rs2[0] * rs2[1]);
 		} break;
 
+		// Signed Multiply Bottom Halfs & Add 64-bit
 		case Opcode::SMALBB: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2810,6 +2889,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[0]);
 		} break;
 
+		// Signed Multiply Bottom Half & Top Half & Add 64-bit
 		case Opcode::SMALBT: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2818,6 +2898,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[1]);
 		} break;
 
+		// Signed Multiply Two Halfs and Two Adds 64-bit
 		case Opcode::SMALDA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2826,6 +2907,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd + rs1[1] * rs2[1] + rs1[0] * rs2[0]);
 		} break;
 
+		// Signed Crossed Multiply Two Halfs and Two Adds 64-bit
 		case Opcode::SMALXDA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2834,6 +2916,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd + rs1[0] * rs2[1] + rs1[1] * rs2[0]);
 		} break;
 
+		// Signed Multiply Two Halfs & Subtract & Add 64-bit
 		case Opcode::SMALDS: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2842,6 +2925,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd + (rs1[1] * rs2[1] - rs1[0] * rs2[0]));
 		} break;
 
+		// Signed Multiply Two Halfs & Reverse Subtract & Add 64-bit
 		case Opcode::SMALDRS: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2850,6 +2934,16 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd + (rs1[0] * rs2[0] - rs1[1] * rs2[1]));
 		} break;
 
+		// Signed Crossed Multiply Two Halfs & Subtract & Add 64-bit
+		case Opcode::SMALXDS: {
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			const auto rd = regs.read64x1(instr.rd());
+			regs.write64x1(instr.rd(), rd + (rs1[1] * rs2[0] - rs1[0] * rs2[1]));
+		} break;
+
+		// Signed Multiply and Add to 64-Bit Data
 		case Opcode::SMAR64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2858,6 +2952,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd + rs1 * rs2);
 		} break;
 
+		// Signed Multiply Four Bytes with 32-bit Adds
 		case Opcode::SMAQA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2870,6 +2965,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rd + sum);
 		} break;
 
+		// Signed and Unsigned Multiply Four Bytes with 32-bit Adds
 		case Opcode::SMAQA_SU: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2882,6 +2978,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rd + sum);
 		} break;
 
+		// SIMD 8-bit Signed Maximum
 		case Opcode::SMAX8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2893,6 +2990,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Signed Maximum
 		case Opcode::SMAX16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2904,6 +3002,31 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD Signed Multiply Bottom Half & Bottom Half
+		case Opcode::SMBB16: {
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			regs.write(instr.rd(), rs1[0] * rs2[0]);
+		} break;
+
+		// SIMD Signed Multiply Bottom Half & Top Half
+		case Opcode::SMBT16: {
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			regs.write(instr.rd(), rs1[0] * rs2[1]);
+		} break;
+
+		// SIMD Signed Multiply Top Half & Top Half
+		case Opcode::SMTT16: {
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = regs.read16x2(instr.rs1());
+			const auto rs2 = regs.read16x2(instr.rs2());
+			regs.write(instr.rd(), rs1[1] * rs2[1]);
+		} break;
+
+		// SIMD Signed Multiply Two Halfs and Subtract
 		case Opcode::SMDS: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2911,6 +3034,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rs1[1] * rs2[1] - rs1[0] * rs2[0]);
 		} break;
 
+		// SIMD Signed Multiply Two Halfs and Reverse Subtract
 		case Opcode::SMDRS: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2918,6 +3042,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rs1[0] * rs2[0] - rs1[1] * rs2[1]);
 		} break;
 
+		// SIMD Signed Crossed Multiply Two Halfs and Subtract
 		case Opcode::SMXDS: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2925,6 +3050,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rs1[1] * rs2[0] - rs1[0] * rs2[1]);
 		} break;
 
+		// SIMD 8-bit Signed Minimum
 		case Opcode::SMIN8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -2936,6 +3062,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Signed Minimum
 		case Opcode::SMIN16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -2947,6 +3074,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD MSW Signed Multiply Word
 		case Opcode::SMMUL: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2955,6 +3083,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rd >> 32);
 		} break;
 
+		// SIMD MSW Signed Multiply Word with Rounding
 		case Opcode::SMMUL_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2963,6 +3092,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), ((rd >> 31) + 1) >> 1);
 		} break;
 
+		// SIMD MSW Signed Multiply Word and Bottom Half
 		case Opcode::SMMWB: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2971,6 +3101,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rd >> 16);
 		} break;
 
+		// SIMD MSW Signed Multiply Word and Bottom Half with Rounding
 		case Opcode::SMMWB_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2979,6 +3110,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), ((rd >> 15) + 1) >> 1);
 		} break;
 
+		// SIMD MSW Signed Multiply Word and Top Half
 		case Opcode::SMMWT: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2987,6 +3119,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), rd >> 16);
 		} break;
 
+		// SIMD MSW Signed Multiply Word and Top Half with Rounding
 		case Opcode::SMMWT_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -2995,6 +3128,7 @@ void ISS::exec_step() {
 			regs.write(instr.rd(), ((rd >> 15) + 1) >> 1);
 		} break;
 
+		// Signed Multiply Two Halfs & Add & Subtract 64-bit
 		case Opcode::SMSLDA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3003,6 +3137,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd - rs1[1] * rs2[1] - rs1[0] * rs2[0]);
 		} break;
 
+		// Signed Crossed Multiply Two Halfs & Add & Subtract 64-bit
 		case Opcode::SMSLXDA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3011,6 +3146,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd - rs1[0] * rs2[1] - rs1[1] * rs2[0]);
 		} break;
 
+		// Signed Multiply and Subtract from 64-Bit Data
 		case Opcode::SMSR64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -3019,6 +3155,7 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd - rs1 * rs2);
 		} break;
 
+		// SIMD Signed 8-bit Multiply
 		case Opcode::SMUL8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -3031,6 +3168,7 @@ void ISS::exec_step() {
 			                          });
 		} break;
 
+		// SIMD Signed Crossed 8-bit Multiply
 		case Opcode::SMULX8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -3043,6 +3181,7 @@ void ISS::exec_step() {
 			                          });
 		} break;
 
+		// SIMD Signed 16-bit Multiply
 		case Opcode::SMUL16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3053,6 +3192,7 @@ void ISS::exec_step() {
 			                           });
 		} break;
 
+		// SIMD Signed Crossed 16-bit Multiply
 		case Opcode::SMULX16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3063,6 +3203,7 @@ void ISS::exec_step() {
 			                           });
 		} break;
 
+		// Rounding Shift Right Arithmetic
 		case Opcode::SRA_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -3073,6 +3214,7 @@ void ISS::exec_step() {
 				regs.write(instr.rd(), rs1);
 		} break;
 
+		// Rounding Shift Right Arithmetic Immediate
 		case Opcode::SRAI_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read(instr.rs1());
@@ -3083,6 +3225,7 @@ void ISS::exec_step() {
 				regs.write(instr.rd(), rs1);
 		} break;
 
+		// SIMD 8-bit Shift Right Arithmetic
 		case Opcode::SRA8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -3094,6 +3237,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Rounding Shift Right Arithmetic
 		case Opcode::SRA8_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -3106,6 +3250,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Shift Right Arithmetic Immediate
 		case Opcode::SRAI8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -3117,6 +3262,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Rounding Shift Right Arithmetic Immediate
 		case Opcode::SRAI8_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -3129,6 +3275,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Shift Right Arithmetic
 		case Opcode::SRA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3140,6 +3287,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Rounding Shift Right Arithmetic
 		case Opcode::SRA16_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3152,6 +3300,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Shift Right Arithmetic Immediate
 		case Opcode::SRAI16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3163,6 +3312,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Rounding Shift Right Arithmetic Immediate
 		case Opcode::SRAI16_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3175,6 +3325,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Shift Right Logical
 		case Opcode::SRL8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3186,6 +3337,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Rounding Shift Right Logical
 		case Opcode::SRL8_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3198,6 +3350,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Shift Right Logical Immediate
 		case Opcode::SRLI8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3209,6 +3362,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Rounding Shift Right Logical Immediate
 		case Opcode::SRLI8_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3221,6 +3375,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Shift Right Logical
 		case Opcode::SRL16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3232,6 +3387,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Rounding Shift Right Logical
 		case Opcode::SRL16_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3244,6 +3400,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Shift Right Logical Immediate
 		case Opcode::SRLI16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3255,6 +3412,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Rounding Shift Right Logical Immediate
 		case Opcode::SRLI16_u: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3267,6 +3425,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Straight Addition & Subtraction
 		case Opcode::STAS16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3274,6 +3433,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), {rs1[0] + rs2[0], rs1[1] - rs2[1]});
 		} break;
 
+		// SIMD 16-bit Straight Subtraction & Addition
 		case Opcode::STSA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3281,6 +3441,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), {rs1[0] - rs2[0], rs1[1] + rs2[1]});
 		} break;
 
+		// SIMD 8-bit Subtraction
 		case Opcode::SUB8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
@@ -3292,6 +3453,7 @@ void ISS::exec_step() {
 			regs.write8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Subtraction
 		case Opcode::SUB16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
@@ -3303,6 +3465,7 @@ void ISS::exec_step() {
 			regs.write16x2(instr.rd(), rd);
 		} break;
 
+		// 64-bit Subtraction
 		case Opcode::SUB64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read64x1(instr.rs1());
@@ -3311,48 +3474,56 @@ void ISS::exec_step() {
 			regs.write64x1(instr.rd(), rd);
 		} break;
 
+		// Signed Unpacking Bytes 1 & 0
 		case Opcode::SUNPKD810: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[0], rs1[1]});
 		} break;
 
+		// Signed Unpacking Bytes 2 & 0
 		case Opcode::SUNPKD820: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[0], rs1[2]});
 		} break;
 
+		// Signed Unpacking Bytes 3 & 0
 		case Opcode::SUNPKD830: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[0], rs1[3]});
 		} break;
 
+		// Signed Unpacking Bytes 3 & 1
 		case Opcode::SUNPKD831: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[1], rs1[3]});
 		} break;
 
+		// Signed Unpacking Bytes 3 & 2
 		case Opcode::SUNPKD832: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[2], rs1[3]});
 		} break;
 
+		// Swap Byte within Halfword
 		case Opcode::SWAP8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read8x4(instr.rs1());
 			regs.write8x4(instr.rd(), {rs1[3], rs1[2], rs1[1], rs1[0]});
 		} break;
 
+		// Swap Halfword within Word
 		case Opcode::SWAP16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.read16x2(instr.rs1());
 			regs.write16x2(instr.rd(), {rs1[1], rs1[0]});
 		} break;
 
+		// SIMD 8-bit Unsigned Clip Value
 		case Opcode::UCLIP8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3366,6 +3537,7 @@ void ISS::exec_step() {
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Unsigned Clip Value
 		case Opcode::UCLIP16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3379,6 +3551,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 32-bit Unsigned Clip Value
 		case Opcode::UCLIP32: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread(instr.rs1());
@@ -3389,6 +3562,7 @@ void ISS::exec_step() {
 			regs.uwrite(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Unsigned Compare Less Than & Equal
 		case Opcode::UCMPLE8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3400,6 +3574,7 @@ void ISS::exec_step() {
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Unsigned Compare Less Than & Equal
 		case Opcode::UCMPLE16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3411,6 +3586,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Unsigned Compare Less Than
 		case Opcode::UCMPLT8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3422,6 +3598,7 @@ void ISS::exec_step() {
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Unsigned Compare Less Than
 		case Opcode::UCMPLT16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3504,6 +3681,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Unsigned Saturating Cross Subtraction & Addition
 		case Opcode::UKCRSA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3516,6 +3694,33 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Unsigned Multiply and Saturating Add to 64-Bit Data
+		case Opcode::UKMAR64: {
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
+			const auto rs2 = (uint32_t)regs.uread(instr.rs2());
+			const auto rd = (uint64_t)regs.uread64x1(instr.rd());
+			const auto res = rs1 * rs2;
+			bool ov = false;
+			const auto res2 = sat_uadd<uint64_t>(&ov, res, rd);
+			regs.uwrite64x1(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
+		} break;
+
+		// Unsigned Multiply and Saturating Subtract from 64-Bit Data
+		case Opcode::UKMSR64: {
+			REQUIRE_ISA(P_ISA_EXT);
+			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
+			const auto rs2 = (uint32_t)regs.uread(instr.rs2());
+			const auto rd = (uint64_t)regs.uread64x1(instr.rd());
+			const auto res = rs1 * rs2;
+			bool ov = false;
+			const auto res2 = sat_uadd<uint64_t>(&ov, res, rd);
+			regs.uwrite64x1(instr.rd(), res2);
+			csrs.vxsat.reg |= ov;
+		} break;
+
+		// SIMD 16-bit Unsigned Saturating Straight Addition & Subtraction
 		case Opcode::UKSTAS16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3528,6 +3733,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Unsigned Saturating Straight Subtraction & Addition
 		case Opcode::UKSTSA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3540,6 +3746,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 8-bit Unsigned Saturating Subtraction
 		case Opcode::UKSUB8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3554,6 +3761,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// SIMD 16-bit Unsigned Saturating Subtraction
 		case Opcode::UKSUB16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3566,6 +3774,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// 64-bit Unsigned Saturating Subtraction
 		case Opcode::UKSUB64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.uread64x1(instr.rs1());
@@ -3575,6 +3784,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Unsigned Subtraction with U16 Saturation
 		case Opcode::UKSUBH: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3584,6 +3794,7 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
+		// Unsigned Subtraction with U32 Saturation
 		case Opcode::UKSUBW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
@@ -3593,30 +3804,18 @@ void ISS::exec_step() {
 			csrs.vxsat.reg |= ov;
 		} break;
 
-		case Opcode::UKMAR64: {
+		// Unsigned Multiply and Add to 64-Bit Data
+		case Opcode::UMAR64: {
 			REQUIRE_ISA(P_ISA_EXT);
-			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
-			const auto rs2 = (uint32_t)regs.uread(instr.rs2());
-			const auto rd = (uint64_t)regs.uread64x1(instr.rd());
+			const auto rs1 = regs.uread(instr.rs1());
+			const auto rs2 = regs.uread(instr.rs2());
+			const auto rd = regs.uread64x1(instr.rd());
 			const auto res = rs1 * rs2;
-			bool ov = false;
-			const auto res2 = sat_uadd<uint64_t>(&ov, res, rd);
-			regs.uwrite64x1(instr.rd(), res2);
-			csrs.vxsat.reg |= ov;
+			const auto res2 = res + rd;
+			regs.write64x1(instr.rd(), res2);
 		} break;
 
-		case Opcode::UKMSR64: {
-			REQUIRE_ISA(P_ISA_EXT);
-			const auto rs1 = (uint32_t)regs.uread(instr.rs1());
-			const auto rs2 = (uint32_t)regs.uread(instr.rs2());
-			const auto rd = (uint64_t)regs.uread64x1(instr.rd());
-			const auto res = rs1 * rs2;
-			bool ov = false;
-			const auto res2 = sat_uadd<uint64_t>(&ov, res, rd);
-			regs.uwrite64x1(instr.rd(), res2);
-			csrs.vxsat.reg |= ov;
-		} break;
-
+		// Unsigned Multiply Four Bytes with 32-bit Adds
 		case Opcode::UMAQA: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3629,6 +3828,7 @@ void ISS::exec_step() {
 			regs.uwrite(instr.rd(), rd + sum);
 		} break;
 
+		// SIMD 8-bit Unsigned Maximum
 		case Opcode::UMAX8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3640,6 +3840,7 @@ void ISS::exec_step() {
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Unsigned Maximum
 		case Opcode::UMAX16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3651,6 +3852,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), rd);
 		} break;
 
+		// SIMD 8-bit Unsigned Minimum
 		case Opcode::UMIN8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3662,6 +3864,7 @@ void ISS::exec_step() {
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Unsigned Minimum
 		case Opcode::UMIN16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3673,6 +3876,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), rd);
 		} break;
 
+		// Unsigned Multiply and Subtract from 64-Bit Data
 		case Opcode::UMSR64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread(instr.rs1());
@@ -3681,6 +3885,7 @@ void ISS::exec_step() {
 			regs.uwrite64x1(instr.rd(), rd - rs1 * rs2);
 		} break;
 
+		// SIMD Unsigned 8-bit Multiply
 		case Opcode::UMUL8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3693,6 +3898,7 @@ void ISS::exec_step() {
 			                           });
 		} break;
 
+		// SIMD Unsigned Crossed 8-bit Multiply
 		case Opcode::UMULX8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3705,6 +3911,7 @@ void ISS::exec_step() {
 			                           });
 		} break;
 
+		// SIMD Unsigned 16-bit Multiply
 		case Opcode::UMUL16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3715,6 +3922,7 @@ void ISS::exec_step() {
 			                            });
 		} break;
 
+		// SIMD Unsigned Crossed 16-bit Multiply
 		case Opcode::UMULX16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3725,6 +3933,7 @@ void ISS::exec_step() {
 			                            });
 		} break;
 
+		// SIMD 8-bit Unsigned Halving Addition
 		case Opcode::URADD8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3736,6 +3945,7 @@ void ISS::exec_step() {
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Unsigned Halving Addition
 		case Opcode::URADD16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3748,6 +3958,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), rd);
 		} break;
 
+		// 64-bit Unsigned Halving Addition
 		case Opcode::URADD64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.uread64x1(instr.rs1());
@@ -3756,6 +3967,7 @@ void ISS::exec_step() {
 			regs.uwrite64x1(instr.rd(), rd);
 		} break;
 
+		// 32-bit Unsigned Halving Addition
 		case Opcode::URADDW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.uread(instr.rs1());
@@ -3764,6 +3976,7 @@ void ISS::exec_step() {
 			regs.uwrite(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Unsigned Halving Cross Addition & Subtraction
 		case Opcode::URCRAS16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3771,6 +3984,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), {rs1[0] - rs2[1], rs1[1] + rs2[0]});
 		} break;
 
+		// SIMD 16-bit Unsigned Halving Cross Subtraction & Addition
 		case Opcode::URCRSA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3778,6 +3992,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), {rs1[0] + rs2[1], rs1[1] - rs2[0]});
 		} break;
 
+		// SIMD 16-bit Unsigned Halving Straight Addition & Subtraction
 		case Opcode::URSTAS16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3785,6 +4000,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), {rs1[0] - rs2[0], rs1[1] + rs2[1]});
 		} break;
 
+		// SIMD 16-bit Unsigned Halving Straight Subtraction & Addition
 		case Opcode::URSTSA16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3792,6 +4008,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), {rs1[0] + rs2[0], rs1[1] - rs2[1]});
 		} break;
 
+		// SIMD 8-bit Unsigned Halving Subtraction
 		case Opcode::URSUB8: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
@@ -3803,6 +4020,7 @@ void ISS::exec_step() {
 			regs.uwrite8x4(instr.rd(), rd);
 		} break;
 
+		// SIMD 16-bit Unsigned Halving Subtraction
 		case Opcode::URSUB16: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread16x2(instr.rs1());
@@ -3814,6 +4032,7 @@ void ISS::exec_step() {
 			regs.uwrite16x2(instr.rd(), rd);
 		} break;
 
+		// 64-bit Unsigned Halving Subtraction
 		case Opcode::URSUB64: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread64x1(instr.rs1());
@@ -3822,6 +4041,7 @@ void ISS::exec_step() {
 			regs.uwrite64x1(instr.rd(), rd);
 		} break;
 
+		// 32-bit Unsigned Halving Subtraction
 		case Opcode::URSUBW: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = (uint64_t)regs.uread(instr.rs1());
@@ -3830,12 +4050,14 @@ void ISS::exec_step() {
 			regs.uwrite(instr.rd(), rd);
 		} break;
 
+		// Extract Word from 64-bit Immediate
 		case Opcode::WEXTI: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread64x1(instr.rs1());
 			regs.uwrite(instr.rd(), rs1 >> instr.rs2());
 		} break;
 
+		// Extract Word from 64-bit
 		case Opcode::WEXT: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread64x1(instr.rs1());
@@ -3843,30 +4065,35 @@ void ISS::exec_step() {
 			regs.uwrite(instr.rd(), rs1 >> rs2);
 		} break;
 
+		// Unsigned Unpacking Bytes 1 & 0
 		case Opcode::ZUNPKD810: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[0], rs1[1]});
 		} break;
 
+		// Unsigned Unpacking Bytes 2 & 0
 		case Opcode::ZUNPKD820: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[0], rs1[2]});
 		} break;
 
+		// Unsigned Unpacking Bytes 3 & 0
 		case Opcode::ZUNPKD830: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[0], rs1[3]});
 		} break;
 
+		// Unigned Unpacking Bytes 3 & 1
 		case Opcode::ZUNPKD831: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
 			regs.uwrite16x2(instr.rd(), {rs1[1], rs1[3]});
 		} break;
 
+		// Unsigned Unpacking Bytes 3 & 2
 		case Opcode::ZUNPKD832: {
 			REQUIRE_ISA(P_ISA_EXT);
 			const auto rs1 = regs.uread8x4(instr.rs1());
